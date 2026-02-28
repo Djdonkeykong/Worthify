@@ -134,9 +134,11 @@ class _SaveProgressPageState extends ConsumerState<SaveProgressPage> {
 
         while (retryCount < maxRetries) {
           try {
-            customerInfo = RevenueCatService().currentCustomerInfo ??
-                await Purchases.getCustomerInfo()
-                    .timeout(const Duration(seconds: 10));
+            customerInfo = RevenueCatService().currentCustomerInfo;
+            if (customerInfo == null && RevenueCatService().isConfigured) {
+              customerInfo = await Purchases.getCustomerInfo()
+                  .timeout(const Duration(seconds: 10));
+            }
             break;
           } catch (e) {
             retryCount++;

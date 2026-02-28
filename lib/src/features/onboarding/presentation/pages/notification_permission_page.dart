@@ -231,8 +231,13 @@ class _NotificationPermissionPageState
         // Check subscription status from RevenueCat
         CustomerInfo? customerInfo;
         try {
-          customerInfo = await Purchases.getCustomerInfo()
-              .timeout(const Duration(seconds: 5));
+          if (RevenueCatService().isConfigured) {
+            customerInfo = await Purchases.getCustomerInfo()
+                .timeout(const Duration(seconds: 5));
+          } else {
+            debugPrint(
+                '[NotificationPermission] RevenueCat not configured - skipping customer info fetch');
+          }
         } catch (e) {
           debugPrint(
               '[NotificationPermission] Error fetching customer info: $e');

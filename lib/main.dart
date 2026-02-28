@@ -259,8 +259,12 @@ void main() async {
   try {
     // Use platform-specific API key
     final revenueCatApiKey = Platform.isIOS
-        ? dotenv.env['REVENUECAT_IOS_API_KEY']
-        : dotenv.env['REVENUECAT_ANDROID_API_KEY'];
+        ? (dotenv.env['REVENUECAT_IOS_API_KEY'] ??
+            dotenv.env['REVENUECAT_APPLE_KEY'] ??
+            dotenv.env['REVENUECAT_API_KEY'])
+        : (dotenv.env['REVENUECAT_ANDROID_API_KEY'] ??
+            dotenv.env['REVENUECAT_GOOGLE_KEY'] ??
+            dotenv.env['REVENUECAT_API_KEY']);
 
     if (revenueCatApiKey != null && revenueCatApiKey.isNotEmpty) {
       await RevenueCatService().initialize(apiKey: revenueCatApiKey);

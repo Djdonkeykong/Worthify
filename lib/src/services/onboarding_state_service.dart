@@ -150,11 +150,18 @@ class OnboardingStateService {
       // Record trial start if applicable (check RevenueCat)
       bool isInTrial = false;
       try {
-        final customerInfo = _revenueCat.currentCustomerInfo ?? await Purchases.getCustomerInfo();
-        final activeEntitlements = customerInfo.entitlements.active.values;
-        final entitlement = (activeEntitlements.isNotEmpty) ? activeEntitlements.first : null;
-        isInTrial = entitlement?.periodType == PeriodType.trial ||
-                    entitlement?.periodType == PeriodType.intro;
+        if (!_revenueCat.isConfigured) {
+          debugPrint(
+              '[OnboardingState] RevenueCat not configured - skipping trial status check');
+        } else {
+          final customerInfo = _revenueCat.currentCustomerInfo ??
+              await Purchases.getCustomerInfo();
+          final activeEntitlements = customerInfo.entitlements.active.values;
+          final entitlement =
+              (activeEntitlements.isNotEmpty) ? activeEntitlements.first : null;
+          isInTrial = entitlement?.periodType == PeriodType.trial ||
+              entitlement?.periodType == PeriodType.intro;
+        }
       } catch (e) {
         debugPrint('[OnboardingState] Error checking trial status: $e');
       }

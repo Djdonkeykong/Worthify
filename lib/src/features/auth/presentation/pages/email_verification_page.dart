@@ -23,6 +23,7 @@ import '../../../../shared/widgets/worthify_back_button.dart';
 import '../../../../services/onboarding_state_service.dart';
 import '../../../../services/subscription_sync_service.dart';
 import '../../../../services/fraud_prevention_service.dart';
+import '../../../../services/revenuecat_service.dart';
 import '../../../onboarding/domain/providers/onboarding_preferences_provider.dart';
 import '../../../onboarding/presentation/pages/discovery_source_page.dart';
 
@@ -249,7 +250,12 @@ class _EmailVerificationPageState extends ConsumerState<EmailVerificationPage> {
             // Check subscription status from RevenueCat (source of truth)
             CustomerInfo? customerInfo;
             try {
-              customerInfo = await Purchases.getCustomerInfo();
+              if (RevenueCatService().isConfigured) {
+                customerInfo = await Purchases.getCustomerInfo();
+              } else {
+                debugPrint(
+                    '[EmailVerification] RevenueCat not configured - skipping customer info fetch');
+              }
             } catch (e) {
               debugPrint(
                   '[EmailVerification] Error fetching RevenueCat customer info: $e');

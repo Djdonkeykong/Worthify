@@ -36,6 +36,12 @@ class SubscriptionSyncService {
       // Get FRESH RevenueCat customer info (don't use cache after purchase)
       CustomerInfo? customerInfo;
       try {
+        if (!_revenueCat.isConfigured) {
+          debugPrint(
+              '[SubscriptionSync] RevenueCat not configured - skipping customer info fetch');
+          await _syncShareExtensionAuthSnapshot(userId: user.id);
+          return;
+        }
         customerInfo = await Purchases.getCustomerInfo();
         debugPrint(
             '[SubscriptionSync] Fetched fresh customer info from RevenueCat');

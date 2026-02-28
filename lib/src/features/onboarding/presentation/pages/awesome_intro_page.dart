@@ -11,6 +11,7 @@ import '../../../../shared/widgets/worthify_back_button.dart';
 import '../../../../services/analytics_service.dart';
 import '../../../../services/onboarding_state_service.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
+import 'discovery_source_page.dart';
 
 class AwesomeIntroPage extends ConsumerStatefulWidget {
   const AwesomeIntroPage({super.key});
@@ -120,7 +121,11 @@ class _AwesomeIntroPageState extends ConsumerState<AwesomeIntroPage> {
               }
 
               if (!context.mounted) return;
-              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const DiscoverySourcePage(),
+                ),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFf2003c),

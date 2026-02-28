@@ -449,12 +449,19 @@ class AuthService {
       await _supabase.auth.signInWithOtp(
         email: email,
         emailRedirectTo: null,
+        shouldCreateUser: false,
       );
     } catch (e) {
       print('OTP sign in error: $e');
 
       // Show more specific error messages based on the error type
       final errorString = e.toString().toLowerCase();
+      if (errorString.contains('user not found') ||
+          errorString.contains('email not confirmed') ||
+          errorString.contains('signup')) {
+        throw Exception(
+            'No existing account was found for this email. Please use an account you already created.');
+      }
       if (errorString.contains('invalid') || errorString.contains('email')) {
         throw Exception(
             'This email address cannot be used. Please try a different email.');

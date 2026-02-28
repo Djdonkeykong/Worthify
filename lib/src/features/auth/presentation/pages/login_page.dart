@@ -346,14 +346,19 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                 // Check subscription status from RevenueCat (source of truth)
                                 CustomerInfo? customerInfo;
                                 try {
-                                  customerInfo =
-                                      await Purchases.getCustomerInfo();
+                                  if (RevenueCatService().isConfigured) {
+                                    customerInfo =
+                                        await Purchases.getCustomerInfo();
+                                  } else {
+                                    debugPrint(
+                                        '[LoginPage] RevenueCat not configured - skipping customer info fetch');
+                                  }
                                   print(
                                       '[LoginPage] RevenueCat customer info fetched successfully');
                                   print(
-                                      '[LoginPage] All entitlements: ${customerInfo.entitlements.all.keys.toList()}');
+                                      '[LoginPage] All entitlements: ${customerInfo?.entitlements.all.keys.toList() ?? []}');
                                   print(
-                                      '[LoginPage] Active entitlements: ${customerInfo.entitlements.active.keys.toList()}');
+                                      '[LoginPage] Active entitlements: ${customerInfo?.entitlements.active.keys.toList() ?? []}');
                                 } catch (e) {
                                   debugPrint(
                                       '[LoginPage] Error fetching RevenueCat customer info: $e');
@@ -609,14 +614,19 @@ class _LoginPageState extends ConsumerState<LoginPage>
                               // Check subscription status from RevenueCat (source of truth)
                               CustomerInfo? customerInfo;
                               try {
-                                customerInfo =
-                                    await Purchases.getCustomerInfo();
+                                if (RevenueCatService().isConfigured) {
+                                  customerInfo =
+                                      await Purchases.getCustomerInfo();
+                                } else {
+                                  debugPrint(
+                                      '[LoginPage] RevenueCat not configured - skipping customer info fetch');
+                                }
                                 print(
                                     '[LoginPage] RevenueCat customer info fetched successfully');
                                 print(
-                                    '[LoginPage] All entitlements: ${customerInfo.entitlements.all.keys.toList()}');
+                                    '[LoginPage] All entitlements: ${customerInfo?.entitlements.all.keys.toList() ?? []}');
                                 print(
-                                    '[LoginPage] Active entitlements: ${customerInfo.entitlements.active.keys.toList()}');
+                                    '[LoginPage] Active entitlements: ${customerInfo?.entitlements.active.keys.toList() ?? []}');
                               } catch (e) {
                                 debugPrint(
                                     '[LoginPage] Error fetching RevenueCat customer info: $e');

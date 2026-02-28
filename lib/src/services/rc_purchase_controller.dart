@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:superwallkit_flutter/superwallkit_flutter.dart' as sw;
+import 'revenuecat_service.dart';
 
 /// RevenueCat purchase controller for Superwall
 /// This allows Superwall to use RevenueCat for purchases and access trial eligibility
@@ -10,6 +11,9 @@ class RCPurchaseController extends sw.PurchaseController {
   @override
   Future<sw.PurchaseResult> purchaseFromAppStore(String productId) async {
     try {
+      if (!RevenueCatService().isConfigured) {
+        return sw.PurchaseResult.failed('RevenueCat not configured');
+      }
       if (kDebugMode) {
         debugPrint('[RCPurchaseController] Purchasing iOS product: $productId');
       }
@@ -99,6 +103,9 @@ class RCPurchaseController extends sw.PurchaseController {
     String? offerId,
   ) async {
     try {
+      if (!RevenueCatService().isConfigured) {
+        return sw.PurchaseResult.failed('RevenueCat not configured');
+      }
       if (kDebugMode) {
         debugPrint('[RCPurchaseController] Purchasing Android product: $productId');
         debugPrint('[RCPurchaseController]   basePlanId: $basePlanId');
@@ -249,6 +256,9 @@ class RCPurchaseController extends sw.PurchaseController {
   @override
   Future<sw.RestorationResult> restorePurchases() async {
     try {
+      if (!RevenueCatService().isConfigured) {
+        return sw.RestorationResult.failed('RevenueCat not configured');
+      }
       if (kDebugMode) {
         debugPrint('[RCPurchaseController] Restoring purchases...');
       }

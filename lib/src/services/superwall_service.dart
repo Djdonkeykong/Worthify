@@ -5,6 +5,7 @@ import 'package:superwallkit_flutter/superwallkit_flutter.dart' as sw;
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'rc_purchase_controller.dart';
 import 'debug_log_service.dart';
+import 'revenuecat_service.dart';
 
 /// Thin wrapper around Superwall to manage configuration, identity, and paywall presentation.
 class SuperwallService {
@@ -54,6 +55,10 @@ class SuperwallService {
   Future<void> _logRevenueCatOfferingsCheck() async {
     // Debug-only health probe. This should never block paywall flow.
     if (!kDebugMode) return;
+    if (!RevenueCatService().isConfigured) {
+      _log('RevenueCat offerings check skipped: SDK not configured');
+      return;
+    }
     try {
       final offerings = await Purchases.getOfferings().timeout(
         const Duration(seconds: 8),
@@ -189,6 +194,10 @@ class SuperwallService {
   /// This ensures Superwall knows about active subscriptions and trial eligibility
   Future<void> _syncSubscriptionStatus() async {
     if (!_configured) return;
+    if (!RevenueCatService().isConfigured) {
+      _log('Skipping subscription sync: RevenueCat not configured');
+      return;
+    }
 
     try {
       final customerInfo = await Purchases.getCustomerInfo();
@@ -412,6 +421,13 @@ class SuperwallService {
       // Validate actual entitlement state so non-gated paywalls don't incorrectly
       // get treated as purchases.
       try {
+        if (!RevenueCatService().isConfigured) {
+          _log(
+            'Post-placement entitlement check skipped: RevenueCat not configured',
+            level: DebugLogLevel.warning,
+          );
+          return false;
+        }
         final customerInfo = await Purchases.getCustomerInfo();
         final hasActiveEntitlement =
             customerInfo.entitlements.active.isNotEmpty;
