@@ -72,7 +72,7 @@ class SupabaseService {
   }) async {
     try {
       final response = await client
-          .from('user_favorites')
+          .from('favorites')
           .select()
           .eq('user_id', userId)
           .order('created_at', ascending: false)
@@ -88,7 +88,7 @@ class SupabaseService {
   Future<bool> removeFavorite(String favoriteId) async {
     try {
       await client
-          .from('user_favorites')
+          .from('favorites')
           .delete()
           .eq('id', favoriteId);
 

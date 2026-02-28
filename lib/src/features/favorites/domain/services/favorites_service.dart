@@ -17,7 +17,7 @@ class FavoritesService {
 
     try {
       final response = await _supabase
-          .from('user_favorites')
+          .from('favorites')
           .select('*')
           .eq('user_id', _currentUserId!)
           .order('created_at', ascending: false);
@@ -39,7 +39,7 @@ class FavoritesService {
 
     try {
       await _supabase
-          .from('user_favorites')
+          .from('favorites')
           .delete()
           .eq('user_id', _currentUserId!)
           .eq('product_id', productId);
@@ -57,7 +57,7 @@ class FavoritesService {
 
     try {
       final response = await _supabase
-          .from('user_favorites')
+          .from('favorites')
           .select('id')
           .eq('user_id', _currentUserId!)
           .eq('product_id', productId)
@@ -78,7 +78,7 @@ class FavoritesService {
 
     try {
       final response = await _supabase
-          .from('user_favorites')
+          .from('favorites')
           .select('id')
           .eq('user_id', _currentUserId!);
 
@@ -97,7 +97,7 @@ class FavoritesService {
 
     try {
       final response = await _supabase
-          .from('user_favorites')
+          .from('favorites')
           .select('*')
           .eq('user_id', _currentUserId!)
           .eq('category', category)

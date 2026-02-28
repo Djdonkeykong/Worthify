@@ -78,18 +78,24 @@ class AppConstants {
   }
 
   static String? get cloudinaryCloudName {
+    const fromDefine = String.fromEnvironment('CLOUDINARY_CLOUD_NAME');
+    if (fromDefine.isNotEmpty) return fromDefine;
     final value = dotenv.env['CLOUDINARY_CLOUD_NAME'];
     if (value == null || value.isEmpty) return null;
     return value;
   }
 
   static String? get cloudinaryApiKey {
+    const fromDefine = String.fromEnvironment('CLOUDINARY_API_KEY');
+    if (fromDefine.isNotEmpty) return fromDefine;
     final value = dotenv.env['CLOUDINARY_API_KEY'];
     if (value == null || value.isEmpty) return null;
     return value;
   }
 
   static String? get cloudinaryApiSecret {
+    const fromDefine = String.fromEnvironment('CLOUDINARY_API_SECRET');
+    if (fromDefine.isNotEmpty) return fromDefine;
     final value = dotenv.env['CLOUDINARY_API_SECRET'];
     if (value == null || value.isEmpty) return null;
     return value;

@@ -13,7 +13,13 @@ class CloudinaryService {
     final apiSecret = AppConstants.cloudinaryApiSecret;
 
     if (cloudName == null || apiKey == null || apiSecret == null) {
-      print('Cloudinary credentials not configured');
+      final missing = <String>[
+        if (cloudName == null) 'CLOUDINARY_CLOUD_NAME',
+        if (apiKey == null) 'CLOUDINARY_API_KEY',
+        if (apiSecret == null) 'CLOUDINARY_API_SECRET',
+      ];
+      print(
+          'Cloudinary credentials not configured. Missing: ${missing.join(', ')}');
       return null;
     }
 
