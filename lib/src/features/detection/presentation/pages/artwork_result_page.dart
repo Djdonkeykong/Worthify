@@ -2,7 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../../core/theme/app_colors.dart';
@@ -165,7 +164,7 @@ class _ArtworkResultPageState extends ConsumerState<ArtworkResultPage> {
                           if (r.estimatedValueRange != null) ...[
                             Text(
                               r.estimatedValueRange!,
-                              style: GoogleFonts.inter(
+                              style: TextStyle(
                                 fontSize: 34,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.secondary,
@@ -175,7 +174,7 @@ class _ArtworkResultPageState extends ConsumerState<ArtworkResultPage> {
                             const SizedBox(height: 4),
                             Text(
                               'Estimated market value',
-                              style: GoogleFonts.inter(
+                              style: TextStyle(
                                 fontSize: 13,
                                 color: const Color(0xFF9C9A97),
                               ),
@@ -200,7 +199,7 @@ class _ArtworkResultPageState extends ConsumerState<ArtworkResultPage> {
                           if (r.identifiedArtist != null) ...[
                             Text(
                               r.identifiedArtist!,
-                              style: GoogleFonts.inter(
+                              style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.secondary,
@@ -216,7 +215,7 @@ class _ArtworkResultPageState extends ConsumerState<ArtworkResultPage> {
                               [r.artworkTitle, r.yearEstimate]
                                   .where((s) => s != null && s.isNotEmpty)
                                   .join('  ·  '),
-                              style: GoogleFonts.inter(
+                              style: TextStyle(
                                 fontSize: 15,
                                 color: const Color(0xFF6B6966),
                               ),
@@ -272,7 +271,7 @@ class _ArtworkResultPageState extends ConsumerState<ArtworkResultPage> {
                             ),
                             child: Text(
                               r.disclaimer,
-                              style: GoogleFonts.inter(
+                              style: TextStyle(
                                 fontSize: 12,
                                 color: const Color(0xFF9C9A97),
                                 height: 1.6,
@@ -326,7 +325,7 @@ class _ArtworkResultPageState extends ConsumerState<ArtworkResultPage> {
                             _isSaved
                                 ? 'Saved to Collection'
                                 : 'Save to Collection',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: _isSaved
@@ -394,7 +393,7 @@ class _ConfidenceBadge extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: color,
@@ -422,7 +421,7 @@ class _Tag extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: GoogleFonts.inter(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
           color: highlight ? Colors.white : const Color(0xFF6B6966),
@@ -458,7 +457,7 @@ class _ExpandableSectionState extends State<_ExpandableSection> {
               children: [
                 Text(
                   widget.title,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.secondary,
@@ -482,7 +481,7 @@ class _ExpandableSectionState extends State<_ExpandableSection> {
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(
               widget.content,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 14,
                 color: const Color(0xFF6B6966),
                 height: 1.65,
@@ -493,3 +492,4 @@ class _ExpandableSectionState extends State<_ExpandableSection> {
     );
   }
 }
+

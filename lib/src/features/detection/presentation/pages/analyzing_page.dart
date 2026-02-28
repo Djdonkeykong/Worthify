@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../../core/theme/app_colors.dart';
@@ -149,7 +148,7 @@ class _AnalyzingPageState extends State<AnalyzingPage>
                       const SizedBox(height: 20),
                       Text(
                         _status,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 17,
                           fontWeight: FontWeight.w500,
@@ -159,7 +158,7 @@ class _AnalyzingPageState extends State<AnalyzingPage>
                       const SizedBox(height: 8),
                       Text(
                         'This usually takes 5–10 seconds',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           color: Colors.white60,
                           fontSize: 13,
                         ),
@@ -207,3 +206,4 @@ class _AnimatedDots extends AnimatedWidget {
     );
   }
 }
+

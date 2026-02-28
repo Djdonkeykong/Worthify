@@ -1,6 +1,5 @@
 // lib/core/theme/app_theme.dart
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'color_schemes.dart';
 import 'text_themes.dart';
 import 'theme_extensions.dart';
@@ -9,7 +8,7 @@ import 'app_colors.dart';
 class AppTheme {
   static ThemeData get lightTheme {
     const colorScheme = lightColorScheme;
-    final interTextTheme = GoogleFonts.interTextTheme(AppTextThemes.textTheme);
+    final interTextTheme = AppTextThemes.textTheme;
     final baseSnackTextStyle =
         (interTextTheme.bodyMedium ?? const TextStyle());
 
@@ -58,7 +57,7 @@ class AppTheme {
 
   static ThemeData get darkTheme {
     const colorScheme = darkColorScheme;
-    final interTextTheme = GoogleFonts.interTextTheme(AppTextThemes.textTheme);
+    final interTextTheme = AppTextThemes.textTheme;
     final baseSnackTextStyle =
         (interTextTheme.bodyMedium ?? const TextStyle());
 
