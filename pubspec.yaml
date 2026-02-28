@@ -18,7 +18,7 @@ dependencies:
   # UI Components
   cupertino_icons: ^1.0.6
   material_symbols_icons: ^4.2780.0
-  google_fonts: ^6.1.0
+  google_fonts: 6.1.0
   super_cupertino_navigation_bar: ^2.1.2
 
   # HTTP & API

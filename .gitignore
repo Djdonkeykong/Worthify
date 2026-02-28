@@ -55,10 +55,6 @@ server/.env
 # API Keys and sensitive data
 lib/src/core/constants/api_keys.dart
 
-# Generated files
-*.g.dart
-*.freezed.dart
-
 # Coverage
 coverage/
 

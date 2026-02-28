@@ -40,9 +40,6 @@ workflows:
           SUPERWALL_API_KEY=$SUPERWALL_API_KEY
           AMPLITUDE_API_KEY=$AMPLITUDE_API_KEY
           EOF
-      - name: Generate code
-        script: |
-          flutter pub run build_runner build --delete-conflicting-outputs
       - name: Build iOS
         script: |
           flutter build ipa --release --dart-define-from-file=.env --export-options-plist=/Users/builder/export_options.plist
@@ -84,9 +81,6 @@ workflows:
           SUPERWALL_API_KEY=$SUPERWALL_API_KEY
           AMPLITUDE_API_KEY=$AMPLITUDE_API_KEY
           EOF
-      - name: Generate code
-        script: |
-          flutter pub run build_runner build --delete-conflicting-outputs
       - name: Build Android App Bundle
         script: |
           flutter build appbundle --release --dart-define-from-file=.env

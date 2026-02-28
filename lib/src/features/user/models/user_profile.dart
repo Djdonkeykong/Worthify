@@ -1,35 +1,67 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-
-part 'user_profile.freezed.dart';
-part 'user_profile.g.dart';
-
 /// User profile with location preferences for localized search results
-@freezed
-class UserProfile with _$UserProfile {
-  const factory UserProfile({
-    required String id,
+class UserProfile {
+  const UserProfile({
+    required this.id,
+    this.countryCode,
+    this.countryName,
+    this.location,
+    this.detectedLocation,
+    this.manualLocation = false,
+    this.preferredCurrency = 'USD',
+    this.preferredLanguage = 'en',
+    this.enableLocation = true,
+    this.createdAt,
+    this.updatedAt,
+  });
 
-    // Location data for localized search
-    String? countryCode, // ISO 3166-1 alpha-2 (e.g., 'US', 'GB', 'CA')
-    String? countryName, // Human-readable (e.g., 'United States')
-    String? location, // SearchAPI location string
-    String? detectedLocation, // Auto-detected from IP/GPS
-    @Default(false) bool manualLocation, // User manually set vs auto
+  final String id;
+  final String? countryCode;
+  final String? countryName;
+  final String? location;
+  final String? detectedLocation;
+  final bool manualLocation;
+  final String preferredCurrency;
+  final String preferredLanguage;
+  final bool enableLocation;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
-    // User preferences
-    @Default('USD') String preferredCurrency,
-    @Default('en') String preferredLanguage, // Language code for SearchAPI (e.g., 'en', 'nb', 'fr')
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
+    DateTime? parseDate(dynamic value) {
+      if (value is String && value.isNotEmpty) return DateTime.tryParse(value);
+      return null;
+    }
 
-    // Privacy settings
-    @Default(true) bool enableLocation,
+    return UserProfile(
+      id: (json['id'] ?? '') as String,
+      countryCode: json['country_code'] as String?,
+      countryName: json['country_name'] as String?,
+      location: json['location'] as String?,
+      detectedLocation: json['detected_location'] as String?,
+      manualLocation: (json['manual_location'] as bool?) ?? false,
+      preferredCurrency: (json['preferred_currency'] as String?) ?? 'USD',
+      preferredLanguage: (json['preferred_language'] as String?) ?? 'en',
+      enableLocation: (json['enable_location'] as bool?) ?? true,
+      createdAt: parseDate(json['created_at']),
+      updatedAt: parseDate(json['updated_at']),
+    );
+  }
 
-    // Metadata
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) = _UserProfile;
-
-  factory UserProfile.fromJson(Map<String, dynamic> json) =>
-      _$UserProfileFromJson(json);
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'id': id,
+      'country_code': countryCode,
+      'country_name': countryName,
+      'location': location,
+      'detected_location': detectedLocation,
+      'manual_location': manualLocation,
+      'preferred_currency': preferredCurrency,
+      'preferred_language': preferredLanguage,
+      'enable_location': enableLocation,
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
+    };
+  }
 }
 
 /// Common country mappings for SearchAPI
