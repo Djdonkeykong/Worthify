@@ -296,7 +296,6 @@ class AuthService {
       final response = await _supabase.auth.signInWithIdToken(
         provider: OAuthProvider.apple,
         idToken: idToken,
-        nonce: credential.state,
       );
 
       // Update auth flag for share extension

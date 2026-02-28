@@ -9,6 +9,7 @@ workflows:
       cocoapods: default
       vars:
         ARTWORK_ENDPOINT: https://worthify-artwork-identifier.onrender.com/identify
+        FLUTTER_BUILD_NUMBER: 3
     scripts:
       - name: Set up keychain
         script: |
@@ -42,7 +43,7 @@ workflows:
           EOF
       - name: Build iOS
         script: |
-          flutter build ipa --release --dart-define-from-file=.env --export-options-plist=/Users/builder/export_options.plist
+          flutter build ipa --release --build-number=$FLUTTER_BUILD_NUMBER --dart-define-from-file=.env --export-options-plist=/Users/builder/export_options.plist
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
@@ -63,6 +64,7 @@ workflows:
         - worthify_keystore
       vars:
         ARTWORK_ENDPOINT: https://worthify-artwork-identifier.onrender.com/identify
+        FLUTTER_BUILD_NUMBER: 3
     scripts:
       - name: Install dependencies
         script: |
@@ -83,7 +85,7 @@ workflows:
           EOF
       - name: Build Android App Bundle
         script: |
-          flutter build appbundle --release --dart-define-from-file=.env
+          flutter build appbundle --release --build-number=$FLUTTER_BUILD_NUMBER --dart-define-from-file=.env
     artifacts:
       - build/app/outputs/**/*.aab
       - build/app/outputs/**/*.apk

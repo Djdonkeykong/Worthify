@@ -1,13 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../features/onboarding/presentation/pages/welcome_free_analysis_page.dart';
 import '../../shared/navigation/main_navigation.dart';
 import 'superwall_service.dart';
 import 'subscription_sync_service.dart';
 import 'onboarding_state_service.dart';
+import 'revenuecat_service.dart';
 
 /// Helper to present Superwall paywall and handle post-purchase navigation
 class PaywallHelper {
+  static bool get shouldBypassPaywall {
+    final raw = (dotenv.env['BYPASS_PAYWALL'] ??
+            dotenv.env['DISABLE_PAYWALL'] ??
+            '')
+        .trim()
+        .toLowerCase();
+    final isFlagEnabled =
+        raw == '1' || raw == 'true' || raw == 'yes' || raw == 'on';
+    return isFlagEnabled || !RevenueCatService().isConfigured;
+  }
+
   /// Present Superwall paywall and navigate appropriately
   /// Returns true if user subscribed successfully
   static Future<bool> presentPaywall({
@@ -16,6 +29,20 @@ class PaywallHelper {
     String placement = 'onboarding_paywall',
   }) async {
     try {
+      if (shouldBypassPaywall) {
+        debugPrint(
+            '[PaywallHelper] Bypass enabled - skipping Superwall paywall');
+        if (userId != null) {
+          try {
+            await OnboardingStateService().markPaymentComplete(userId);
+          } catch (e) {
+            debugPrint(
+                '[PaywallHelper] Failed to mark payment complete in bypass mode: $e');
+          }
+        }
+        return true;
+      }
+
       debugPrint('[PaywallHelper] Presenting Superwall paywall...');
 
       // Present Superwall paywall
@@ -60,6 +87,25 @@ class PaywallHelper {
     if (!context.mounted) return;
 
     try {
+      if (shouldBypassPaywall) {
+        debugPrint(
+            '[PaywallHelper] Bypass enabled - navigating directly without paywall');
+        if (userId != null) {
+          try {
+            await OnboardingStateService().markPaymentComplete(userId);
+          } catch (e) {
+            debugPrint(
+                '[PaywallHelper] Failed to mark payment complete in bypass mode: $e');
+          }
+        }
+        if (!context.mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const MainNavigation()),
+          (route) => false,
+        );
+        return;
+      }
+
       // Present paywall
       final didPurchase = await presentPaywall(
         context: context,

@@ -8,6 +8,7 @@ import '../../../auth/presentation/pages/login_page.dart';
 import '../../../auth/domain/providers/auth_provider.dart';
 import '../../../../shared/services/image_preloader.dart';
 import '../../../../services/onboarding_state_service.dart';
+import '../../../../services/paywall_helper.dart';
 import '../../../onboarding/presentation/pages/welcome_free_analysis_page.dart';
 import '../../../onboarding/presentation/pages/paywall_presentation_page.dart';
 import '../../../home/domain/providers/history_bootstrap_provider.dart';
@@ -99,8 +100,15 @@ class _SplashPageState extends ConsumerState<SplashPage> {
         final onboardingService = OnboardingStateService();
 
         try {
+          if (PaywallHelper.shouldBypassPaywall) {
+            debugPrint(
+                '[Splash] Paywall bypass enabled - routing authenticated user directly to home');
+            await _bootstrapHistoryUiState();
+            nextPage = const MainNavigation();
+          } else {
           // Determine where user should go based on onboarding completion
-          final onboardingRoute = await onboardingService.determineOnboardingRoute(user.id);
+          final onboardingRoute =
+              await onboardingService.determineOnboardingRoute(user.id);
 
           if (onboardingRoute == null) {
             // Onboarding complete - go to home
@@ -119,6 +127,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
             // Onboarding not started or abandoned before account creation - send to login
             debugPrint('[Splash] User onboarding not started or incomplete - routing to login');
             nextPage = const LoginPage();
+          }
           }
         } catch (e) {
           debugPrint('[Splash] Error determining onboarding route: $e');

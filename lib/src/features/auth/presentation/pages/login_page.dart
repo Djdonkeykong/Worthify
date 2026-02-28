@@ -292,7 +292,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           try {
                             print('[LoginPage] Apple sign-in button clicked');
                             final authService = ref.read(authServiceProvider);
-                            await authService.signInWithApple();
+                            final authResponse =
+                                await authService.signInWithApple();
                             print('[LoginPage] Apple sign-in completed');
 
                             if (context.mounted) {
@@ -301,7 +302,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                               Navigator.pop(context);
 
                               final supabase = Supabase.instance.client;
-                              final userId = supabase.auth.currentUser?.id;
+                              final userId = supabase.auth.currentUser?.id ??
+                                  authResponse.user?.id;
                               print('[LoginPage] Current user ID: $userId');
 
                               if (userId != null) {
@@ -560,7 +562,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         try {
                           print('[LoginPage] Google sign-in button clicked');
                           final authService = ref.read(authServiceProvider);
-                          await authService.signInWithGoogle();
+                          final authResponse =
+                              await authService.signInWithGoogle();
                           print('[LoginPage] Google sign-in completed');
 
                           if (context.mounted) {
@@ -569,7 +572,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                             Navigator.pop(context);
 
                             final supabase = Supabase.instance.client;
-                            final userId = supabase.auth.currentUser?.id;
+                            final userId = supabase.auth.currentUser?.id ??
+                                authResponse.user?.id;
                             print('[LoginPage] Current user ID: $userId');
 
                             if (userId != null) {

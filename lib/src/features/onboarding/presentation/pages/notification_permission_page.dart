@@ -213,6 +213,22 @@ class _NotificationPermissionPageState
         debugPrint(
             '[NotificationPermission] User authenticated - skipping SaveProgressPage');
 
+        if (PaywallHelper.shouldBypassPaywall) {
+          debugPrint(
+              '[NotificationPermission] Paywall bypass enabled - navigating directly to home');
+          if (mounted) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => const MainNavigation(
+                  key: ValueKey('fresh-main-nav'),
+                ),
+              ),
+              (route) => false,
+            );
+          }
+          return;
+        }
+
         // Ensure RevenueCat is identified to this user before checking status/eligibility.
         try {
           await SubscriptionSyncService()
