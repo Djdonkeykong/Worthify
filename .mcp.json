@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=kcpdeqiozxbvrtanhdjz",
+      "authorization": {
+        "type": "bearer",
+        "token": "${SUPABASE_MCP_KEY}"
+      }
+    },
+    "revenuecat": {
+      "type": "http",
+      "url": "https://mcp.revenuecat.ai/mcp",
+      "authorization": {
+        "type": "bearer",
+        "token": "${REVENUECAT_MCP_KEY}"
+      }
+    },
+    "amplitude": {
+      "type": "http",
+      "url": "https://mcp.amplitude.com/mcp",
+      "authorization": {
+        "type": "oauth2"
+      }
+    }
+  }
+}

@@ -1,0 +1,82 @@
+workflows:
+  ios-workflow:
+    name: iOS Workflow
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: 16.4
+      cocoapods: default
+      vars:
+        DETECT_ENDPOINT: https://worthify-fashion-detector.onrender.com/detect
+        DETECT_AND_SEARCH_ENDPOINT: https://worthify-fashion-detector.onrender.com/detect-and-search
+    scripts:
+      - name: Set up keychain
+        script: |
+          keychain initialize
+      - name: Fetch signing files
+        script: |
+          app-store-connect fetch-signing-files com.worthify.worthify --type IOS_APP_STORE --create
+          app-store-connect fetch-signing-files com.worthify.worthify.shareExtension --type IOS_APP_STORE --create
+      - name: Add certificates to keychain
+        script: |
+          keychain add-certificates
+      - name: Set up signing in Xcode project
+        script: |
+          xcode-project use-profiles
+      - name: Install dependencies
+        script: |
+          flutter pub get
+      - name: Pre-build script
+        script: |
+          cat > .env <<EOF
+          SUPABASE_URL=$SUPABASE_URL
+          SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+          GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID
+          GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID
+          APIFY_API_TOKEN=$APIFY_API_TOKEN
+          DETECT_ENDPOINT=$DETECT_ENDPOINT
+          DETECT_AND_SEARCH_ENDPOINT=$DETECT_AND_SEARCH_ENDPOINT
+          EOF
+
+          flutter pub run build_runner build --delete-conflicting-outputs
+      - name: Build iOS
+        script: |
+          flutter build ipa --release --dart-define=DETECT_ENDPOINT=$DETECT_ENDPOINT --dart-define=DETECT_AND_SEARCH_ENDPOINT=$DETECT_AND_SEARCH_ENDPOINT --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+  android-workflow:
+    name: Android Workflow
+    max_build_duration: 120
+    environment:
+      flutter: stable
+      vars:
+        DETECT_ENDPOINT: https://worthify-fashion-detector.onrender.com/detect
+        DETECT_AND_SEARCH_ENDPOINT: https://worthify-fashion-detector.onrender.com/detect-and-search
+      android_signing:
+        - worthify_keystore
+    scripts:
+      - name: Install dependencies
+        script: |
+          flutter pub get
+      - name: Pre-build script
+        script: |
+          cat > .env <<EOF
+          SUPABASE_URL=$SUPABASE_URL
+          SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+          GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID
+          GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID
+          APIFY_API_TOKEN=$APIFY_API_TOKEN
+          DETECT_ENDPOINT=$DETECT_ENDPOINT
+          DETECT_AND_SEARCH_ENDPOINT=$DETECT_AND_SEARCH_ENDPOINT
+          EOF
+
+          flutter pub run build_runner build --delete-conflicting-outputs
+      - name: Build Android App Bundle
+        script: |
+          flutter build appbundle --release --dart-define=DETECT_ENDPOINT=$DETECT_ENDPOINT --dart-define=DETECT_AND_SEARCH_ENDPOINT=$DETECT_AND_SEARCH_ENDPOINT
+    artifacts:
+      - build/app/outputs/**/*.aab
+      - build/app/outputs/**/*.apk

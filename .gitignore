@@ -1,0 +1,91 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Environment variables
+.env
+.env.local
+.env.production
+server/.env
+
+# API Keys and sensitive data
+lib/src/core/constants/api_keys.dart
+
+# Generated files
+*.g.dart
+*.freezed.dart
+
+# Coverage
+coverage/
+
+# Platform specific
+ios/Flutter/Generated.xcconfig
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Firebase
+firebase_options.dart
+
+# Scripts
+scripts/prebuild_script.sh
+scripts/.env
+
+# Storage and local data
+storage/
+codemagic_prebuild.sh
+
+# Android signing
+android/key.properties
+android/app/upload-keystore.jks
+*.jks
+*.keystore
+
+# Claude Code local settings
+.claude/
+claude.json
+
+# Temporary Claude files (should be auto-cleaned but sometimes aren't)
+tmpclaude-*

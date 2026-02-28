@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "180535037120",
+    "project_id": "worthify-app-main",
+    "storage_bucket": "worthify-app-main.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:180535037120:android:ed0704c2385e5dc813f125",
+        "android_client_info": {
+          "package_name": "com.worthify.worthify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqIgH9TA0Qn4-g5zKNwhx-fx6lNtil0yQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

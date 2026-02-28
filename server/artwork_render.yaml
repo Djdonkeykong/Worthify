@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: worthify-artwork-identifier
+    runtime: python
+    rootDir: server
+    buildCommand: pip install -r artwork_requirements.txt
+    startCommand: gunicorn -k uvicorn.workers.UvicornWorker artwork_server:app --bind 0.0.0.0:$PORT --timeout 60 --workers 2
+    envVars:
+      - key: SEARCHAPI_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: "*"

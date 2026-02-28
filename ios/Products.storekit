@@ -1,0 +1,134 @@
+{
+  "identifier" : "E7A8B9C1",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6738294651",
+    "_developerTeamID" : "",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 765568800.0,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21529845",
+      "localizations" : [
+
+      ],
+      "name" : "Worthify Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "41.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6738294652",
+          "introductoryOffer" : {
+            "internalID" : "6738294653",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P3D"
+          },
+          "localizations" : [
+            {
+              "description" : "Unlock unlimited fashion searches and AI-powered recommendations",
+              "displayName" : "Worthify Premium Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.worthify.worthify.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Worthify Premium Yearly (3-day trial)",
+          "subscriptionGroupID" : "21529845",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "8.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6738294654",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlock unlimited fashion searches and AI-powered recommendations",
+              "displayName" : "Worthify Premium Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.worthify.worthify.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Worthify Premium Monthly",
+          "subscriptionGroupID" : "21529845",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

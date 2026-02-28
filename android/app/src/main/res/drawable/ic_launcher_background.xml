@@ -1,0 +1,10 @@
+﻿<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <inset
+            android:inset="7dp">
+            <shape android:shape="oval">
+                <solid android:color="@color/ic_launcher_background" />
+            </shape>
+        </inset>
+    </item>
+</layer-list>
