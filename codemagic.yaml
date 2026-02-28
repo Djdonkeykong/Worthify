@@ -5,11 +5,10 @@ workflows:
     instance_type: mac_mini_m2
     environment:
       flutter: stable
-      xcode: 16.4
+      xcode: latest
       cocoapods: default
       vars:
-        DETECT_ENDPOINT: https://worthify-fashion-detector.onrender.com/detect
-        DETECT_AND_SEARCH_ENDPOINT: https://worthify-fashion-detector.onrender.com/detect-and-search
+        ARTWORK_ENDPOINT: https://worthify-artwork-identifier.onrender.com/identify
     scripts:
       - name: Set up keychain
         script: |
@@ -27,56 +26,70 @@ workflows:
       - name: Install dependencies
         script: |
           flutter pub get
-      - name: Pre-build script
+      - name: Write .env file
         script: |
           cat > .env <<EOF
           SUPABASE_URL=$SUPABASE_URL
           SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
           GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID
           GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID
-          APIFY_API_TOKEN=$APIFY_API_TOKEN
-          DETECT_ENDPOINT=$DETECT_ENDPOINT
-          DETECT_AND_SEARCH_ENDPOINT=$DETECT_AND_SEARCH_ENDPOINT
+          ARTWORK_ENDPOINT=$ARTWORK_ENDPOINT
+          CLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME
+          CLOUDINARY_UPLOAD_PRESET=$CLOUDINARY_UPLOAD_PRESET
+          REVENUECAT_APPLE_KEY=$REVENUECAT_APPLE_KEY
+          SUPERWALL_API_KEY=$SUPERWALL_API_KEY
+          AMPLITUDE_API_KEY=$AMPLITUDE_API_KEY
           EOF
-
+      - name: Generate code
+        script: |
           flutter pub run build_runner build --delete-conflicting-outputs
       - name: Build iOS
         script: |
-          flutter build ipa --release --dart-define=DETECT_ENDPOINT=$DETECT_ENDPOINT --dart-define=DETECT_AND_SEARCH_ENDPOINT=$DETECT_AND_SEARCH_ENDPOINT --export-options-plist=/Users/builder/export_options.plist
+          flutter build ipa --release --dart-define-from-file=.env --export-options-plist=/Users/builder/export_options.plist
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
 
   android-workflow:
     name: Android Workflow
     max_build_duration: 120
+    instance_type: mac_mini_m2
     environment:
       flutter: stable
-      vars:
-        DETECT_ENDPOINT: https://worthify-fashion-detector.onrender.com/detect
-        DETECT_AND_SEARCH_ENDPOINT: https://worthify-fashion-detector.onrender.com/detect-and-search
       android_signing:
         - worthify_keystore
+      vars:
+        ARTWORK_ENDPOINT: https://worthify-artwork-identifier.onrender.com/identify
     scripts:
       - name: Install dependencies
         script: |
           flutter pub get
-      - name: Pre-build script
+      - name: Write .env file
         script: |
           cat > .env <<EOF
           SUPABASE_URL=$SUPABASE_URL
           SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
           GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID
           GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID
-          APIFY_API_TOKEN=$APIFY_API_TOKEN
-          DETECT_ENDPOINT=$DETECT_ENDPOINT
-          DETECT_AND_SEARCH_ENDPOINT=$DETECT_AND_SEARCH_ENDPOINT
+          ARTWORK_ENDPOINT=$ARTWORK_ENDPOINT
+          CLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME
+          CLOUDINARY_UPLOAD_PRESET=$CLOUDINARY_UPLOAD_PRESET
+          REVENUECAT_GOOGLE_KEY=$REVENUECAT_GOOGLE_KEY
+          SUPERWALL_API_KEY=$SUPERWALL_API_KEY
+          AMPLITUDE_API_KEY=$AMPLITUDE_API_KEY
           EOF
-
+      - name: Generate code
+        script: |
           flutter pub run build_runner build --delete-conflicting-outputs
       - name: Build Android App Bundle
         script: |
-          flutter build appbundle --release --dart-define=DETECT_ENDPOINT=$DETECT_ENDPOINT --dart-define=DETECT_AND_SEARCH_ENDPOINT=$DETECT_AND_SEARCH_ENDPOINT
+          flutter build appbundle --release --dart-define-from-file=.env
     artifacts:
       - build/app/outputs/**/*.aab
       - build/app/outputs/**/*.apk
