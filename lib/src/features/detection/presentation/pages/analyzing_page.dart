@@ -89,96 +89,144 @@ class _AnalyzingPageState extends State<AnalyzingPage>
 
   @override
   Widget build(BuildContext context) {
+    final imageFile = File(widget.imageFile.path);
+
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Background image
-          Image.file(
-            File(widget.imageFile.path),
-            fit: BoxFit.cover,
-          ),
-
-          // Gradient overlay
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0x55000000), Color(0xDD000000)],
-                stops: [0.3, 1.0],
-              ),
-            ),
-          ),
-
-          // UI
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Back button
-                GestureDetector(
+      backgroundColor: const Color(0xFFF3F3F6),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: GestureDetector(
                   onTap: () => Navigator.of(context).pop(),
                   child: Container(
-                    margin: const EdgeInsets.all(16),
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withOpacity(0.92),
                       shape: BoxShape.circle,
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x11000000),
+                          blurRadius: 14,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: const Icon(
                       Icons.arrow_back,
-                      color: Colors.white,
+                      color: AppColors.secondary,
                       size: 20,
                     ),
                   ),
                 ),
-
-                const Spacer(),
-
-                // Status area
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(32, 0, 32, 52),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      _AnimatedDots(controller: _dotController),
-                      const SizedBox(height: 20),
-                      Text(
-                        _status,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 560),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(36),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x18000000),
+                            blurRadius: 26,
+                            offset: Offset(0, 12),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'This usually takes 5–10 seconds',
-                        style: TextStyle(
-                          color: Colors.white60,
-                          fontSize: 13,
-                        ),
-                        textAlign: TextAlign.center,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.fromLTRB(26, 28, 26, 14),
+                            child: Text(
+                              'Add an Artwork',
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.secondary,
+                                height: 1.05,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: Container(
+                                  color: const Color(0xFFEDEBF0),
+                                  child: Image.file(
+                                    imageFile,
+                                    fit: BoxFit.contain,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+                            child: Column(
+                              children: [
+                                _AnimatedDots(
+                                  controller: _dotController,
+                                  color: const Color(0xFFC2971A),
+                                ),
+                                const SizedBox(height: 14),
+                                Text(
+                                  _status.replaceAll('...', '...'),
+                                  style: const TextStyle(
+                                    color: Color(0xFFC2971A),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.2,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'This usually takes 5-10 seconds',
+                                  style: TextStyle(
+                                    color: Color(0xFF8F8B95),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 class _AnimatedDots extends AnimatedWidget {
-  const _AnimatedDots({required AnimationController controller})
-      : super(listenable: controller);
+  final Color color;
+
+  const _AnimatedDots({
+    required AnimationController controller,
+    this.color = Colors.white,
+  }) : super(listenable: controller);
 
   @override
   Widget build(BuildContext context) {
@@ -195,8 +243,8 @@ class _AnimatedDots extends AnimatedWidget {
             child: Container(
               width: 8,
               height: 8,
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: color,
                 shape: BoxShape.circle,
               ),
             ),
@@ -206,4 +254,3 @@ class _AnimatedDots extends AnimatedWidget {
     );
   }
 }
-

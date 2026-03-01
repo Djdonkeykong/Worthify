@@ -160,91 +160,115 @@ class _ArtworkResultPageState extends ConsumerState<ArtworkResultPage> {
                             ),
                           ),
 
-                          // ── VALUE RANGE ──────────────────────────────
-                          if (r.estimatedValueRange != null) ...[
+                          const Text(
+                            'ESTIMATED ARTWORK',
+                            style: TextStyle(
+                              fontSize: 11,
+                              letterSpacing: 1.2,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF9C9A97),
+                            ),
+                          ),
+                          SizedBox(height: spacing.s),
+                          const Text(
+                            'Painting',
+                            style: TextStyle(
+                              fontSize: 38,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.secondary,
+                              height: 1.02,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            (r.identifiedArtist != null &&
+                                    r.identifiedArtist!.trim().isNotEmpty)
+                                ? r.identifiedArtist!.trim()
+                                : 'Unknown artist',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF6B6966),
+                              height: 1.25,
+                            ),
+                          ),
+                          SizedBox(height: spacing.m),
+                          if (r.estimatedValueRange != null &&
+                              r.estimatedValueRange!.trim().isNotEmpty) ...[
                             Text(
-                              r.estimatedValueRange!,
-                              style: TextStyle(
-                                fontSize: 34,
-                                fontWeight: FontWeight.w700,
+                              r.estimatedValueRange!.trim(),
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w600,
                                 color: AppColors.secondary,
                                 height: 1.1,
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
+                            const Text(
                               'Estimated market value',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: const Color(0xFF9C9A97),
+                                color: Color(0xFF9C9A97),
                               ),
                             ),
-                            const SizedBox(height: 14),
+                            SizedBox(height: spacing.m),
                           ],
-
-                          // Confidence badge
                           _ConfidenceBadge(
                             label: _confidenceLabel(r.confidenceLevel),
                             color: _confidenceColor(r.confidenceLevel),
                           ),
-
                           Padding(
-                            padding:
-                                EdgeInsets.symmetric(vertical: spacing.m),
-                            child: Divider(
-                                color: AppColors.outline, height: 1),
+                            padding: EdgeInsets.symmetric(vertical: spacing.m),
+                            child: Divider(color: AppColors.outline, height: 1),
                           ),
-
-                          // ── ARTIST ───────────────────────────────────
-                          if (r.identifiedArtist != null) ...[
+                          if (r.artworkTitle != null &&
+                              r.artworkTitle!.trim().isNotEmpty) ...[
                             Text(
-                              r.identifiedArtist!,
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
+                              r.artworkTitle!.trim(),
+                              style: const TextStyle(
+                                fontSize: 21,
+                                fontWeight: FontWeight.w600,
                                 color: AppColors.secondary,
+                                height: 1.2,
                               ),
                             ),
                             const SizedBox(height: 4),
                           ],
-
-                          // Title · Year
-                          if (r.artworkTitle != null ||
-                              r.yearEstimate != null)
+                          if (r.yearEstimate != null &&
+                              r.yearEstimate!.trim().isNotEmpty) ...[
                             Text(
-                              [r.artworkTitle, r.yearEstimate]
-                                  .where((s) => s != null && s.isNotEmpty)
-                                  .join('  ·  '),
-                              style: TextStyle(
+                              r.yearEstimate!.trim(),
+                              style: const TextStyle(
                                 fontSize: 15,
-                                color: const Color(0xFF6B6966),
+                                color: Color(0xFF6B6966),
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-
-                          const SizedBox(height: 14),
-
-                          // Tags
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              if (r.style != null && r.style!.isNotEmpty)
-                                _Tag(r.style!),
-                              if (r.mediumGuess != null &&
-                                  r.mediumGuess!.isNotEmpty)
-                                _Tag(r.mediumGuess!),
-                              if (r.isOriginalOrPrint != null &&
-                                  r.isOriginalOrPrint != 'unknown')
-                                _Tag(
-                                  _capitalize(r.isOriginalOrPrint!),
-                                  highlight:
-                                      r.isOriginalOrPrint == 'original',
-                                ),
-                            ],
-                          ),
-
-                          SizedBox(height: spacing.l),
-
+                            SizedBox(height: spacing.m),
+                          ],
+                          if ((r.style != null && r.style!.trim().isNotEmpty) ||
+                              (r.mediumGuess != null &&
+                                  r.mediumGuess!.trim().isNotEmpty) ||
+                              (r.isOriginalOrPrint != null &&
+                                  r.isOriginalOrPrint!.trim().isNotEmpty &&
+                                  r.isOriginalOrPrint != 'unknown'))
+                            _ExpandableSection(
+                              title: 'Artwork details',
+                              content: [
+                                if (r.style != null &&
+                                    r.style!.trim().isNotEmpty)
+                                  'Style: ${r.style!.trim()}',
+                                if (r.mediumGuess != null &&
+                                    r.mediumGuess!.trim().isNotEmpty)
+                                  'Medium: ${r.mediumGuess!.trim()}',
+                                if (r.isOriginalOrPrint != null &&
+                                    r.isOriginalOrPrint!.trim().isNotEmpty &&
+                                    r.isOriginalOrPrint != 'unknown')
+                                  'Type: ${_capitalize(r.isOriginalOrPrint!.trim())}',
+                              ].join('\n'),
+                            ),
+                          SizedBox(height: spacing.m),
                           // ── EXPANDABLE SECTIONS ───────────────────────
                           if (r.valueReasoning != null &&
                               r.valueReasoning!.isNotEmpty)
@@ -400,32 +424,6 @@ class _ConfidenceBadge extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _Tag extends StatelessWidget {
-  final String label;
-  final bool highlight;
-
-  const _Tag(this.label, {this.highlight = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: highlight ? AppColors.secondary : AppColors.primaryDark,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: highlight ? Colors.white : const Color(0xFF6B6966),
-        ),
       ),
     );
   }
