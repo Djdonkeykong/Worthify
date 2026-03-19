@@ -36,23 +36,26 @@ workflows:
       - name: Write native config
         script: |
           cat > "$XCODE_PROJECT_DIR/Config/Base.xcconfig" <<EOF
-          APP_DISPLAY_NAME = ${APP_DISPLAY_NAME}
-          APP_GROUP_ID = ${APP_GROUP_ID}
+          APP_DISPLAY_NAME = "${APP_DISPLAY_NAME}"
+          APP_GROUP_ID = "${APP_GROUP_ID}"
           
-          SUPABASE_URL = ${SUPABASE_URL}
-          SUPABASE_ANON_KEY = ${SUPABASE_ANON_KEY}
-          ARTWORK_ENDPOINT = ${ARTWORK_ENDPOINT}
-          DETECT_ENDPOINT = ${DETECT_ENDPOINT}
-          DETECT_AND_SEARCH_ENDPOINT = ${DETECT_AND_SEARCH_ENDPOINT}
-          SEARCHAPI_KEY = ${SEARCHAPI_KEY}
-          APIFY_API_TOKEN = ${APIFY_API_TOKEN}
-          CLOUDINARY_CLOUD_NAME = ${CLOUDINARY_CLOUD_NAME}
-          CLOUDINARY_API_KEY = ${CLOUDINARY_API_KEY}
-          CLOUDINARY_API_SECRET = ${CLOUDINARY_API_SECRET}
-          AMPLITUDE_API_KEY = ${AMPLITUDE_API_KEY}
-          REVENUECAT_IOS_API_KEY = ${REVENUECAT_IOS_API_KEY}
-          SUPERWALL_IOS_API_KEY = ${SUPERWALL_IOS_API_KEY}
+          SUPABASE_URL = "${SUPABASE_URL}"
+          SUPABASE_ANON_KEY = "${SUPABASE_ANON_KEY}"
+          ARTWORK_ENDPOINT = "${ARTWORK_ENDPOINT}"
+          DETECT_ENDPOINT = "${DETECT_ENDPOINT}"
+          DETECT_AND_SEARCH_ENDPOINT = "${DETECT_AND_SEARCH_ENDPOINT}"
+          SEARCHAPI_KEY = "${SEARCHAPI_KEY}"
+          APIFY_API_TOKEN = "${APIFY_API_TOKEN}"
+          CLOUDINARY_CLOUD_NAME = "${CLOUDINARY_CLOUD_NAME}"
+          CLOUDINARY_API_KEY = "${CLOUDINARY_API_KEY}"
+          CLOUDINARY_API_SECRET = "${CLOUDINARY_API_SECRET}"
+          AMPLITUDE_API_KEY = "${AMPLITUDE_API_KEY}"
+          REVENUECAT_IOS_API_KEY = "${REVENUECAT_IOS_API_KEY}"
+          SUPERWALL_IOS_API_KEY = "${SUPERWALL_IOS_API_KEY}"
           EOF
+      - name: Verify generated Supabase config
+        script: |
+          grep '^SUPABASE_URL' "$XCODE_PROJECT_DIR/Config/Base.xcconfig"
       - name: Generate Xcode project
         script: |
           cd "$XCODE_PROJECT_DIR"
@@ -114,23 +117,26 @@ workflows:
       - name: Write native config
         script: |
           cat > "$XCODE_PROJECT_DIR/Config/Base.xcconfig" <<EOF
-          APP_DISPLAY_NAME = ${APP_DISPLAY_NAME}
-          APP_GROUP_ID = ${APP_GROUP_ID}
+          APP_DISPLAY_NAME = "${APP_DISPLAY_NAME}"
+          APP_GROUP_ID = "${APP_GROUP_ID}"
           
-          SUPABASE_URL = ${SUPABASE_URL}
-          SUPABASE_ANON_KEY = ${SUPABASE_ANON_KEY}
-          ARTWORK_ENDPOINT = ${ARTWORK_ENDPOINT}
-          DETECT_ENDPOINT = ${DETECT_ENDPOINT}
-          DETECT_AND_SEARCH_ENDPOINT = ${DETECT_AND_SEARCH_ENDPOINT}
-          SEARCHAPI_KEY = ${SEARCHAPI_KEY}
-          APIFY_API_TOKEN = ${APIFY_API_TOKEN}
-          CLOUDINARY_CLOUD_NAME = ${CLOUDINARY_CLOUD_NAME}
-          CLOUDINARY_API_KEY = ${CLOUDINARY_API_KEY}
-          CLOUDINARY_API_SECRET = ${CLOUDINARY_API_SECRET}
-          AMPLITUDE_API_KEY = ${AMPLITUDE_API_KEY}
-          REVENUECAT_IOS_API_KEY = ${REVENUECAT_IOS_API_KEY}
-          SUPERWALL_IOS_API_KEY = ${SUPERWALL_IOS_API_KEY}
+          SUPABASE_URL = "${SUPABASE_URL}"
+          SUPABASE_ANON_KEY = "${SUPABASE_ANON_KEY}"
+          ARTWORK_ENDPOINT = "${ARTWORK_ENDPOINT}"
+          DETECT_ENDPOINT = "${DETECT_ENDPOINT}"
+          DETECT_AND_SEARCH_ENDPOINT = "${DETECT_AND_SEARCH_ENDPOINT}"
+          SEARCHAPI_KEY = "${SEARCHAPI_KEY}"
+          APIFY_API_TOKEN = "${APIFY_API_TOKEN}"
+          CLOUDINARY_CLOUD_NAME = "${CLOUDINARY_CLOUD_NAME}"
+          CLOUDINARY_API_KEY = "${CLOUDINARY_API_KEY}"
+          CLOUDINARY_API_SECRET = "${CLOUDINARY_API_SECRET}"
+          AMPLITUDE_API_KEY = "${AMPLITUDE_API_KEY}"
+          REVENUECAT_IOS_API_KEY = "${REVENUECAT_IOS_API_KEY}"
+          SUPERWALL_IOS_API_KEY = "${SUPERWALL_IOS_API_KEY}"
           EOF
+      - name: Verify generated Supabase config
+        script: |
+          grep '^SUPABASE_URL' "$XCODE_PROJECT_DIR/Config/Base.xcconfig"
       - name: Generate Xcode project
         script: |
           cd "$XCODE_PROJECT_DIR"
