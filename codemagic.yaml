@@ -17,6 +17,20 @@ workflows:
           if ! command -v xcodegen >/dev/null 2>&1; then
             brew install xcodegen
           fi
+      - name: Validate required environment variables
+        script: |
+          missing=0
+          for var_name in SUPABASE_URL SUPABASE_ANON_KEY ARTWORK_ENDPOINT CLOUDINARY_CLOUD_NAME CLOUDINARY_API_KEY CLOUDINARY_API_SECRET; do
+            if [ -z "${!var_name}" ]; then
+              echo "Missing required environment variable: ${var_name}"
+              missing=1
+            else
+              echo "${var_name}: present"
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
       - name: Write native config
         script: |
           cat > "$XCODE_PROJECT_DIR/Config/Base.xcconfig" <<EOF
@@ -78,6 +92,20 @@ workflows:
         script: |
           if ! command -v xcodegen >/dev/null 2>&1; then
             brew install xcodegen
+          fi
+      - name: Validate required environment variables
+        script: |
+          missing=0
+          for var_name in SUPABASE_URL SUPABASE_ANON_KEY ARTWORK_ENDPOINT CLOUDINARY_CLOUD_NAME CLOUDINARY_API_KEY CLOUDINARY_API_SECRET; do
+            if [ -z "${!var_name}" ]; then
+              echo "Missing required environment variable: ${var_name}"
+              missing=1
+            else
+              echo "${var_name}: present"
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
           fi
       - name: Write native config
         script: |
