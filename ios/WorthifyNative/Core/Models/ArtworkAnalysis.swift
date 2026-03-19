@@ -59,6 +59,23 @@ struct ArtworkAnalysis: Codable, Identifiable, Equatable {
         case disclaimer
     }
 
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = UUID()
+        identifiedArtist = try container.decodeIfPresent(String.self, forKey: .identifiedArtist)
+        artworkTitle = try container.decodeIfPresent(String.self, forKey: .artworkTitle)
+        yearEstimate = try container.decodeIfPresent(String.self, forKey: .yearEstimate)
+        style = try container.decodeIfPresent(String.self, forKey: .style)
+        mediumGuess = try container.decodeIfPresent(String.self, forKey: .mediumGuess)
+        isOriginalOrPrint = try container.decodeIfPresent(String.self, forKey: .isOriginalOrPrint)
+        confidenceLevel = try container.decode(String.self, forKey: .confidenceLevel)
+        estimatedValueRange = try container.decodeIfPresent(String.self, forKey: .estimatedValueRange)
+        valueReasoning = try container.decodeIfPresent(String.self, forKey: .valueReasoning)
+        comparableExamplesSummary = try container.decodeIfPresent(String.self, forKey: .comparableExamplesSummary)
+        disclaimer = try container.decode(String.self, forKey: .disclaimer)
+        sourceImageURL = nil
+    }
+
     var titleText: String {
         artworkTitle?.nilIfEmpty ?? "Untitled"
     }
