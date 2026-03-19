@@ -17,8 +17,26 @@ struct RootView: View {
             }
         }
         .animation(.smooth(duration: 0.28), value: environment.router.rootRoute)
+        .alert(
+            "Startup Notice",
+            isPresented: Binding(
+                get: { environment.sessionStore.startupAlertMessage != nil },
+                set: { if !$0 { environment.sessionStore.clearStartupAlert() } }
+            )
+        ) {
+            Button("OK", role: .cancel) {
+                environment.sessionStore.clearStartupAlert()
+            }
+        } message: {
+            Text(environment.sessionStore.startupAlertMessage ?? "Unknown startup issue.")
+        }
         .task {
             guard environment.router.rootRoute == .splash else { return }
+            if let startupValidationMessage = environment.config.startupValidationMessage {
+                environment.sessionStore.setStartupAlert(startupValidationMessage)
+                environment.router.rootRoute = .auth
+                return
+            }
             await environment.sessionStore.restore()
             await environment.shareBridge.syncConfiguration()
             switch environment.sessionStore.state {

@@ -28,6 +28,22 @@ struct AppConfig {
         supabaseProjectURL.appendingPathComponent("rest/v1")
     }
 
+    var startupValidationMessage: String? {
+        var missingKeys: [String] = []
+        if supabaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            missingKeys.append("SUPABASE_URL")
+        }
+        if supabaseAnonKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            missingKeys.append("SUPABASE_ANON_KEY")
+        }
+
+        guard !missingKeys.isEmpty else {
+            return nil
+        }
+
+        return "Missing startup config: \(missingKeys.joined(separator: ", "))."
+    }
+
     static func load(bundle: Bundle = .main) -> AppConfig {
         func value(_ key: String) -> String {
             bundle.object(forInfoDictionaryKey: key) as? String ?? ""
