@@ -21,7 +21,6 @@ struct RootView: View {
             guard environment.router.rootRoute == .splash else { return }
             await environment.sessionStore.restore()
             await environment.shareBridge.syncConfiguration()
-            await environment.notificationService.registerForPushIfNeeded()
             switch environment.sessionStore.state {
             case .restoring:
                 environment.router.rootRoute = .splash
@@ -29,6 +28,9 @@ struct RootView: View {
                 environment.router.rootRoute = .auth
             case .signedIn:
                 environment.router.rootRoute = .main
+            }
+            Task {
+                await environment.notificationService.registerForPushIfNeeded()
             }
         }
     }
