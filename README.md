@@ -1,57 +1,58 @@
-# Worthify - AI Art Identification & Value Estimation App
+# Worthify
 
-Worthify is a Flutter mobile application that uses AI to identify artwork and estimate its value. Photograph a painting or artwork → the app identifies the artist, title, style, and year, then provides an AI-estimated value range.
+Worthify is now an iOS-first SwiftUI app backed by the existing Supabase and detection services in this repository.
 
-## Who is it for?
-- Thrift shoppers and estate sale buyers
-- Museum visitors curious about a piece
-- People who inherited artwork and want to know what it's worth
+## Repo layout
 
-## How it works
-1. User photographs artwork with their camera (or uploads an image)
-2. Backend sends the image to SearchAPI.io (Google Image Search mode)
-3. Top results (artist, title, auction data) are extracted and sent to an LLM
-4. LLM returns structured identification + value estimate
-5. Result is displayed with a confidence level, value range, and legal disclaimer
-6. User can save artworks to their Collection
+- `ios/`
+  - SwiftUI client app skeleton and source
+- `supabase/`
+  - database migrations and Edge Functions
+- `server/`
+  - artwork detection backend
+- `assets/`
+  - reusable images and brand assets
+- `docs/`
+  - migration and implementation notes
 
-> **Legal note:** Worthify never claims to provide a certified appraisal. All value estimates are AI-generated ranges for informational purposes only.
+## Current client status
 
-## Tech Stack
-- **Frontend:** Flutter 3.19+ (Material 3), Riverpod state management
-- **Backend:** Supabase (auth + database), custom detection server
-- **Auth:** Google Sign-In + Sign in with Apple
-- **Payments:** RevenueCat + Superwall
-- **Analytics:** Amplitude
-- **Push Notifications:** Firebase Cloud Messaging
-- **Font:** Inter via google_fonts
+The Flutter client has been retired from the repo structure. The active client is the native SwiftUI app under `ios/`.
 
-## Development
+The native app currently centers on:
+
+- email OTP auth against Supabase
+- image upload to Cloudinary
+- artwork analysis through the existing backend endpoint
+- saved analysis/history loading from Supabase
+- profile and subscription snapshot loading from Supabase
+
+## Native app setup
+
+The iOS client uses XcodeGen.
+
+1. Open `ios/`
+2. Fill in `Config/Base.xcconfig` or the per-config overrides
+3. Run:
 
 ```bash
-# Install dependencies
-flutter pub get
-
-# Run with environment variables
-flutter run --dart-define-from-file=.env
-
-# Static analysis
-flutter analyze
-
-# Run tests
-flutter test
-
-# Build for Android
-flutter build apk
+xcodegen generate
 ```
 
-## Environment Variables
-See `ENV_DEPLOYMENT_GUIDE.md` for the full list of required environment variables.
+4. Open the generated Xcode project on macOS
+5. Build and run from Xcode
 
-## Design System
-The app uses a gallery aesthetic:
-- **Background:** `#F9F8F7` (gallery off-white)
-- **CTAs / Active states:** `#1C1B1A` (near-black)
-- **Font:** Inter (google_fonts)
+## Backend setup
 
-See `CLAUDE.md` for the full design system specification.
+### Supabase
+
+The repo keeps the existing Supabase schema and functions in `supabase/`.
+
+### Detection server
+
+The artwork detection backend remains in `server/`.
+
+## Notes
+
+- This workspace cannot generate or build an Xcode project from Windows, so final project generation still needs macOS.
+- If you want Apple Sign In, Google Sign-In, RevenueCat, Superwall, and APNS fully wired in the native client, those are the next native-only tasks after the current direct-networking SwiftUI flow.

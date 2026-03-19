@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>SUPABASE_URL</key>
+	<string>$(SUPABASE_URL)</string>
+	<key>SUPABASE_ANON_KEY</key>
+	<string>$(SUPABASE_ANON_KEY)</string>
+	<key>ARTWORK_ENDPOINT</key>
+	<string>$(ARTWORK_ENDPOINT)</string>
+	<key>DETECT_ENDPOINT</key>
+	<string>$(DETECT_ENDPOINT)</string>
+	<key>DETECT_AND_SEARCH_ENDPOINT</key>
+	<string>$(DETECT_AND_SEARCH_ENDPOINT)</string>
+	<key>SEARCHAPI_KEY</key>
+	<string>$(SEARCHAPI_KEY)</string>
+	<key>APIFY_API_TOKEN</key>
+	<string>$(APIFY_API_TOKEN)</string>
+	<key>CLOUDINARY_CLOUD_NAME</key>
+	<string>$(CLOUDINARY_CLOUD_NAME)</string>
+	<key>CLOUDINARY_API_KEY</key>
+	<string>$(CLOUDINARY_API_KEY)</string>
+	<key>CLOUDINARY_API_SECRET</key>
+	<string>$(CLOUDINARY_API_SECRET)</string>
+	<key>AMPLITUDE_API_KEY</key>
+	<string>$(AMPLITUDE_API_KEY)</string>
+	<key>REVENUECAT_IOS_API_KEY</key>
+	<string>$(REVENUECAT_IOS_API_KEY)</string>
+	<key>SUPERWALL_IOS_API_KEY</key>
+	<string>$(SUPERWALL_IOS_API_KEY)</string>
+	<key>APP_GROUP_ID</key>
+	<string>$(APP_GROUP_ID)</string>
+</dict>
+</plist>
