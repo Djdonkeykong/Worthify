@@ -232,9 +232,13 @@ final class ArtworkDetectionService: DetectionServicing {
             throw AppError.invalidConfiguration("ARTWORK_ENDPOINT is missing.")
         }
 
-        var request = URLRequest(url: URL(string: config.artworkEndpoint)!)
+        let endpointURL = URL(string: config.artworkEndpoint)!
+        var request = URLRequest(url: endpointURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let host = endpointURL.host, host.contains("ngrok") {
+            request.setValue("true", forHTTPHeaderField: "ngrok-skip-browser-warning")
+        }
         request.httpBody = try JSONEncoder().encode(["image_url": imageURL.absoluteString])
 
         let (data, response) = try await urlSession.data(for: request)
