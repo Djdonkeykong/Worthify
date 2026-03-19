@@ -32,6 +32,15 @@ struct RootView: View {
         }
         .task {
             guard environment.router.rootRoute == .splash else { return }
+            if environment.config.bypassAuth {
+                await environment.shareBridge.syncConfiguration()
+                environment.router.rootRoute = .main
+                Task {
+                    await environment.sessionStore.restore()
+                    await environment.notificationService.registerForPushIfNeeded()
+                }
+                return
+            }
             if let startupValidationMessage = environment.config.startupValidationMessage {
                 environment.sessionStore.setStartupAlert(startupValidationMessage)
                 environment.router.rootRoute = .auth

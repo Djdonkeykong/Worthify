@@ -6,6 +6,17 @@ struct ResultsView: View {
     @State private var saveMessage: String?
     @State private var isSaving = false
 
+    private var isGuestMode: Bool {
+        environment.config.bypassAuth && signedInSession == nil
+    }
+
+    private var signedInSession: AppSession? {
+        if case let .signedIn(session) = environment.sessionStore.state {
+            return session
+        }
+        return nil
+    }
+
     var body: some View {
         WorthifyScreen {
             HeroPanel(
@@ -63,6 +74,11 @@ struct ResultsView: View {
                     Label(saveMessage, systemImage: saveMessage == "Saved." ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                         .foregroundStyle(saveMessage == "Saved." ? .green : .secondary)
                 }
+            } else if isGuestMode {
+                GlassCard {
+                    Label("Guest mode is enabled. Saving to collection is disabled for now.", systemImage: "lock.slash")
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .navigationTitle("Result")
@@ -72,7 +88,7 @@ struct ResultsView: View {
                 Task { await saveResult() }
             }
             .buttonStyle(WorthifyPrimaryButtonStyle())
-            .disabled(isSaving || result.sourceImageURL == nil)
+            .disabled(isSaving || result.sourceImageURL == nil || isGuestMode || signedInSession == nil)
             .padding(.horizontal, 20)
             .padding(.top, 10)
             .padding(.bottom, 8)

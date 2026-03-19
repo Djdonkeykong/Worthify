@@ -7,6 +7,17 @@ struct CollectionView: View {
     @State private var errorMessage: String?
     @State private var searchText = ""
 
+    private var isGuestMode: Bool {
+        environment.config.bypassAuth && signedInSession == nil
+    }
+
+    private var signedInSession: AppSession? {
+        if case let .signedIn(session) = environment.sessionStore.state {
+            return session
+        }
+        return nil
+    }
+
     var body: some View {
         WorthifyScreen {
             HeroPanel(
@@ -20,24 +31,32 @@ struct CollectionView: View {
                 }
             }
 
-            GlassCard {
-                SectionHeading("Search collection")
+            if isGuestMode {
+                EmptyStateCard(
+                    title: "Guest mode",
+                    subtitle: "Collection data is hidden until sign-in is enabled again.",
+                    systemImage: "lock.slash"
+                )
+            } else {
+                GlassCard {
+                    SectionHeading("Search collection")
 
-                HStack(spacing: 12) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 12) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundStyle(.secondary)
 
-                    TextField("Search by title or artist", text: $searchText)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
+                        TextField("Search by title or artist", text: $searchText)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 16)
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 16)
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            }
 
-            collectionSection(title: "Favorites", items: filteredFavorites, emptyTitle: "No favorites yet", emptySubtitle: "Saved pieces will start appearing here once that backend distinction is wired.")
-            collectionSection(title: "History", items: filteredHistory, emptyTitle: "No history yet", emptySubtitle: "Run and save an analysis to build your archive.")
+                collectionSection(title: "Favorites", items: filteredFavorites, emptyTitle: "No favorites yet", emptySubtitle: "Saved pieces will start appearing here once that backend distinction is wired.")
+                collectionSection(title: "History", items: filteredHistory, emptyTitle: "No history yet", emptySubtitle: "Run and save an analysis to build your archive.")
+            }
 
             if let errorMessage {
                 GlassCard {
@@ -53,6 +72,13 @@ struct CollectionView: View {
     }
 
     private func load() async {
+        if isGuestMode {
+            favorites = []
+            history = []
+            errorMessage = nil
+            return
+        }
+
         do {
             async let favoritesItems = environment.favoritesService.fetchFavorites()
             async let historyItems = environment.collectionService.fetchRecentItems()

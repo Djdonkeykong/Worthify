@@ -15,6 +15,7 @@ struct AppConfig {
     let revenueCatAPIKey: String
     let superwallAPIKey: String
     let appGroupID: String
+    let bypassAuth: Bool
 
     var supabaseProjectURL: URL {
         URL(string: supabaseURL)!
@@ -29,6 +30,10 @@ struct AppConfig {
     }
 
     var startupValidationMessage: String? {
+        guard !bypassAuth else {
+            return nil
+        }
+
         var missingKeys: [String] = []
         if supabaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             missingKeys.append("SUPABASE_URL")
@@ -63,7 +68,12 @@ struct AppConfig {
             amplitudeAPIKey: value("AMPLITUDE_API_KEY"),
             revenueCatAPIKey: value("REVENUECAT_IOS_API_KEY"),
             superwallAPIKey: value("SUPERWALL_IOS_API_KEY"),
-            appGroupID: value("APP_GROUP_ID")
+            appGroupID: value("APP_GROUP_ID"),
+            bypassAuth: {
+                let raw = value("BYPASS_AUTH").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                if raw.isEmpty { return true }
+                return raw != "0" && raw != "false" && raw != "no"
+            }()
         )
     }
 }

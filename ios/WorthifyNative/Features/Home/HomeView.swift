@@ -7,6 +7,17 @@ struct HomeView: View {
     @State private var profile: UserProfile?
     @State private var errorMessage: String?
 
+    private var isGuestMode: Bool {
+        environment.config.bypassAuth && signedInSession == nil
+    }
+
+    private var signedInSession: AppSession? {
+        if case let .signedIn(session) = environment.sessionStore.state {
+            return session
+        }
+        return nil
+    }
+
     var body: some View {
         WorthifyScreen {
             HeroPanel(
@@ -15,7 +26,7 @@ struct HomeView: View {
                 subtitle: "Track credits, jump into a fresh analysis, and keep recent results close."
             ) {
                 HStack(spacing: 10) {
-                    MetricPill(title: "Plan", value: subscription.isActive ? "Active" : "Free")
+                    MetricPill(title: "Plan", value: isGuestMode ? "Guest" : (subscription.isActive ? "Active" : "Free"))
                     MetricPill(title: "Credits", value: "\(subscription.availableCredits)", tint: AppTheme.accentSecondary)
                 }
             }
@@ -35,11 +46,11 @@ struct HomeView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(profile?.fullName ?? "Worthify collector")
+                        Text(profile?.fullName ?? (isGuestMode ? "Guest mode" : "Worthify collector"))
                             .font(.system(.title3, design: .rounded, weight: .bold))
                             .foregroundStyle(AppTheme.ink)
 
-                        Text(profile?.email ?? "No email available")
+                        Text(profile?.email ?? signedInSession?.email ?? (isGuestMode ? "Browsing without sign-in" : "No email available"))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
 
@@ -47,6 +58,13 @@ struct HomeView: View {
                             InsightChip(text: productIdentifier, tint: AppTheme.accentSecondary)
                         }
                     }
+                }
+            }
+
+            if isGuestMode {
+                GlassCard {
+                    Label("Guest mode is enabled. History, favorites, and saving are disabled until sign-in is restored.", systemImage: "person.crop.circle.badge.exclamationmark")
+                        .foregroundStyle(AppTheme.accent)
                 }
             }
 
@@ -126,6 +144,14 @@ struct HomeView: View {
     }
 
     private func load() async {
+        if isGuestMode {
+            recentItems = []
+            subscription = .inactive
+            profile = nil
+            errorMessage = nil
+            return
+        }
+
         do {
             async let collectionItems = environment.collectionService.fetchRecentItems()
             async let subscriptionSnapshot = environment.subscriptionService.fetchSnapshot()

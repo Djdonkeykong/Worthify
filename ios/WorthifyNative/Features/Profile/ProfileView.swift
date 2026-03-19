@@ -6,15 +6,26 @@ struct ProfileView: View {
     @State private var profile: UserProfile?
     @State private var errorMessage: String?
 
+    private var isGuestMode: Bool {
+        environment.config.bypassAuth && signedInSession == nil
+    }
+
+    private var signedInSession: AppSession? {
+        if case let .signedIn(session) = environment.sessionStore.state {
+            return session
+        }
+        return nil
+    }
+
     var body: some View {
         WorthifyScreen {
             HeroPanel(
                 eyebrow: "Profile",
-                title: profile?.fullName ?? "Worthify account",
-                subtitle: profile?.email ?? currentSessionLabel
+                title: profile?.fullName ?? (isGuestMode ? "Guest mode" : "Worthify account"),
+                subtitle: profile?.email ?? signedInSession?.email ?? currentSessionLabel
             ) {
                 HStack(spacing: 10) {
-                    MetricPill(title: "Status", value: subscription.isActive ? "Active" : "Free")
+                    MetricPill(title: "Status", value: isGuestMode ? "Guest" : (subscription.isActive ? "Active" : "Free"))
                     MetricPill(title: "Credits", value: "\(subscription.availableCredits)", tint: AppTheme.accentSecondary)
                 }
             }
@@ -24,10 +35,10 @@ struct ProfileView: View {
                     avatar
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(profile?.fullName ?? "Collector")
+                        Text(profile?.fullName ?? (isGuestMode ? "Guest" : "Collector"))
                             .font(.system(.title3, design: .rounded, weight: .bold))
 
-                        Text(profile?.email ?? currentSessionLabel)
+                        Text(profile?.email ?? signedInSession?.email ?? currentSessionLabel)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
 
@@ -54,13 +65,18 @@ struct ProfileView: View {
             GlassCard {
                 SectionHeading("Actions")
 
-                Button("Sign out", role: .destructive) {
-                    Task {
-                        await environment.sessionStore.signOut()
-                        environment.router.rootRoute = .auth
+                if isGuestMode {
+                    Text("Sign-in is temporarily bypassed for this build.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Button("Sign out", role: .destructive) {
+                        Task {
+                            await environment.sessionStore.signOut()
+                            environment.router.rootRoute = .auth
+                        }
                     }
+                    .buttonStyle(WorthifySecondaryButtonStyle())
                 }
-                .buttonStyle(WorthifySecondaryButtonStyle())
             }
 
             if let errorMessage {
@@ -101,13 +117,20 @@ struct ProfileView: View {
         case .restoring:
             return "Restoring session"
         case .signedOut:
-            return "Signed out"
+            return isGuestMode ? "Browsing without sign-in" : "Signed out"
         case let .signedIn(session):
             return session.email ?? session.userID
         }
     }
 
     private func load() async {
+        if isGuestMode {
+            subscription = .inactive
+            profile = nil
+            errorMessage = nil
+            return
+        }
+
         do {
             async let snapshot = environment.subscriptionService.fetchSnapshot()
             async let fetchedProfile = environment.subscriptionService.fetchProfile()
