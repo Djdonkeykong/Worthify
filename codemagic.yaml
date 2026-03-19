@@ -158,9 +158,21 @@ workflows:
           agvtool new-version -all "$NEXT_BUILD_NUMBER"
       - name: Build ipa for distribution
         script: |
-          xcode-project build-ipa \
+          set -o pipefail
+          if ! xcode-project build-ipa \
             --project "$CM_BUILD_DIR/$XCODE_PROJECT_DIR/$XCODE_PROJECT_NAME.xcodeproj" \
-            --scheme "$XCODE_SCHEME"
+            --scheme "$XCODE_SCHEME"; then
+            echo "xcode-project build-ipa failed. Dumping captured xcodebuild logs."
+            if ls /tmp/xcodebuild_logs/*.log >/dev/null 2>&1; then
+              for log_file in /tmp/xcodebuild_logs/*.log; do
+                echo "===== ${log_file} ====="
+                cat "$log_file"
+              done
+            else
+              echo "No /tmp/xcodebuild_logs/*.log files were found."
+            fi
+            exit 1
+          fi
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
