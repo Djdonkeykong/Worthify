@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 @MainActor
@@ -14,6 +15,7 @@ final class AppEnvironment: ObservableObject {
 
     @Published var sessionStore: SessionStore
     @Published var router: AppRouter
+    private var cancellables = Set<AnyCancellable>()
 
     init(
         config: AppConfig,
@@ -39,6 +41,20 @@ final class AppEnvironment: ObservableObject {
         self.shareBridge = shareBridge
         self.sessionStore = sessionStore
         self.router = router
+
+        // Forward nested observable changes so views reading
+        // environment.router/environment.sessionStore actually update.
+        sessionStore.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        router.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     static func bootstrap() -> AppEnvironment {
