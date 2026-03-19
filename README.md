@@ -52,6 +52,41 @@ The repo keeps the existing Supabase schema and functions in `supabase/`.
 
 The artwork detection backend remains in `server/`.
 
+#### Run the detection server locally with ngrok
+
+The iOS app only depends on `ARTWORK_ENDPOINT`, so you can replace the Render URL with a tunnel to your local FastAPI server.
+
+1. Create a server env file from `server/.env.example` and fill in:
+   - `SEARCHAPI_KEY`
+   - `ANTHROPIC_API_KEY`
+2. Install the server dependencies:
+
+```bash
+pip install -r server/artwork_requirements.txt
+```
+
+3. Run the server locally:
+
+```bash
+cd server
+uvicorn artwork_server:app --host 0.0.0.0 --port 8000
+```
+
+4. In another terminal, expose it with ngrok:
+
+```bash
+ngrok http 8000
+```
+
+5. Point the app to the tunnel URL:
+   - `ARTWORK_ENDPOINT=https://<your-ngrok-domain>/identify`
+
+Notes:
+
+- If you use Codemagic/TestFlight, update the `ARTWORK_ENDPOINT` variable in the `worthify_env` group and rebuild the app.
+- If you use a local Xcode build, set `ARTWORK_ENDPOINT` in `ios/Config/Base.xcconfig`.
+- If your ngrok URL changes on every run, the app needs a rebuilt config unless you use a reserved/stable tunnel domain.
+
 ## Notes
 
 - This workspace cannot generate or build an Xcode project from Windows, so final project generation still needs macOS.
