@@ -36,7 +36,7 @@ struct ProfileView: View {
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text(profile?.fullName ?? (isGuestMode ? "Guest" : "Collector"))
-                            .font(.system(.title3, design: .rounded, weight: .bold))
+                            .font(.headline)
 
                         Text(profile?.email ?? signedInSession?.email ?? currentSessionLabel)
                             .font(.subheadline)
@@ -95,12 +95,12 @@ struct ProfileView: View {
     private var avatar: some View {
         ZStack {
             Circle()
-                .fill(AppTheme.heroGradient)
+                .fill(AppTheme.accent.opacity(0.14))
                 .frame(width: 72, height: 72)
 
             Text(initials)
-                .font(.system(.title2, design: .rounded, weight: .bold))
-                .foregroundStyle(.white)
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(AppTheme.accent)
         }
     }
 

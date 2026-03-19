@@ -51,7 +51,7 @@ struct CollectionView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 16)
-                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
                 collectionSection(title: "Favorites", items: filteredFavorites, emptyTitle: "No favorites yet", emptySubtitle: "Saved pieces will start appearing here once that backend distinction is wired.")
@@ -125,7 +125,7 @@ struct CollectionView: View {
 
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(item.titleText)
-                                    .font(.system(.headline, design: .rounded, weight: .bold))
+                                    .font(.headline)
 
                                 Text(item.subtitleText)
                                     .font(.subheadline)

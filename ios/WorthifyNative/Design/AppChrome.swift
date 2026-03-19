@@ -1,55 +1,19 @@
 import SwiftUI
 
 enum AppTheme {
-    static let accent = Color(red: 0.14, green: 0.44, blue: 0.96)
-    static let accentSecondary = Color(red: 0.13, green: 0.78, blue: 0.80)
-    static let rose = Color(red: 0.93, green: 0.42, blue: 0.49)
-    static let gold = Color(red: 0.89, green: 0.74, blue: 0.35)
-    static let ink = Color(red: 0.10, green: 0.12, blue: 0.18)
-    static let pageGradient = LinearGradient(
-        colors: [
-            Color(red: 0.95, green: 0.97, blue: 1.00),
-            Color(red: 0.91, green: 0.95, blue: 0.99),
-            Color.white
-        ],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
-    static let heroGradient = LinearGradient(
-        colors: [
-            accent,
-            Color(red: 0.34, green: 0.24, blue: 0.95),
-            accentSecondary
-        ],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+    static let accent = Color.blue
+    static let accentSecondary = Color.teal
+    static let rose = Color.pink
+    static let gold = Color.orange
+    static let ink = Color.primary
+    static let pageBackground = Color(uiColor: .systemGroupedBackground)
+    static let cardBackground = Color(uiColor: .secondarySystemGroupedBackground)
 }
 
 struct AppBackdrop: View {
     var body: some View {
-        ZStack {
-            AppTheme.pageGradient
-
-            Circle()
-                .fill(AppTheme.accent.opacity(0.22))
-                .frame(width: 320, height: 320)
-                .blur(radius: 24)
-                .offset(x: -120, y: -260)
-
-            Circle()
-                .fill(AppTheme.accentSecondary.opacity(0.18))
-                .frame(width: 280, height: 280)
-                .blur(radius: 18)
-                .offset(x: 140, y: -180)
-
-            Circle()
-                .fill(AppTheme.rose.opacity(0.12))
-                .frame(width: 360, height: 360)
-                .blur(radius: 40)
-                .offset(x: 140, y: 360)
-        }
-        .ignoresSafeArea()
+        AppTheme.pageBackground
+            .ignoresSafeArea()
     }
 }
 
@@ -68,11 +32,9 @@ struct WorthifyScreen<Content: View>: View {
                 VStack(alignment: .leading, spacing: 20) {
                     content
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 120)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 20)
             }
-            .scrollIndicators(.hidden)
         }
     }
 }
@@ -96,32 +58,24 @@ struct HeroPanel<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(eyebrow.uppercased())
-                    .font(.caption.weight(.semibold))
-                    .tracking(1.4)
-                    .foregroundStyle(.white.opacity(0.82))
+        VStack(alignment: .leading, spacing: 10) {
+            Text(eyebrow.uppercased())
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
-                Text(title)
-                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                    .foregroundStyle(.white)
+            Text(title)
+                .font(.title2.weight(.semibold))
 
-                Text(subtitle)
-                    .font(.body)
-                    .foregroundStyle(.white.opacity(0.88))
+            Text(subtitle)
+                .font(.body)
+                .foregroundStyle(.secondary)
+
+            if !(Content.self == EmptyView.self) {
+                content
+                    .padding(.top, 4)
             }
-
-            content
         }
-        .padding(24)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppTheme.heroGradient, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .stroke(.white.opacity(0.22), lineWidth: 1)
-        )
-        .shadow(color: AppTheme.accent.opacity(0.18), radius: 28, y: 12)
     }
 }
 
@@ -130,7 +84,7 @@ struct GlassCard<Content: View>: View {
     let content: Content
 
     init(
-        padding: CGFloat = 18,
+        padding: CGFloat = 16,
         @ViewBuilder content: () -> Content
     ) {
         self.padding = padding
@@ -138,17 +92,12 @@ struct GlassCard<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             content
         }
         .padding(padding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .stroke(.white.opacity(0.60), lineWidth: 1)
-        )
-        .shadow(color: AppTheme.ink.opacity(0.08), radius: 20, y: 10)
+        .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
@@ -164,8 +113,7 @@ struct SectionHeading: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.system(.title3, design: .rounded, weight: .bold))
-                .foregroundStyle(AppTheme.ink)
+                .font(.headline)
 
             if let subtitle {
                 Text(subtitle)
@@ -182,23 +130,18 @@ struct MetricPill: View {
     var tint: Color = AppTheme.accent
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title.uppercased())
-                .font(.caption2.weight(.semibold))
-                .tracking(1.0)
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption)
                 .foregroundStyle(.secondary)
 
             Text(value)
-                .font(.system(.headline, design: .rounded, weight: .bold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(AppTheme.ink)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(tint.opacity(0.10), in: Capsule())
-        .overlay(
-            Capsule()
-                .stroke(tint.opacity(0.16), lineWidth: 1)
-        )
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -208,11 +151,11 @@ struct InsightChip: View {
 
     var body: some View {
         Text(text)
-            .font(.subheadline.weight(.medium))
+            .font(.footnote.weight(.medium))
             .foregroundStyle(tint)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(tint.opacity(0.12), in: Capsule())
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(tint.opacity(0.10), in: Capsule())
     }
 }
 
@@ -246,20 +189,16 @@ struct ImageCard: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: height)
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(.white.opacity(0.65), lineWidth: 1)
-        )
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     private var placeholder: some View {
         ZStack {
-            AppTheme.heroGradient
+            Color(uiColor: .tertiarySystemFill)
 
-            Image(systemName: "photo.artframe")
-                .font(.system(size: 34, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.92))
+            Image(systemName: "photo")
+                .font(.title2)
+                .foregroundStyle(.secondary)
         }
     }
 }
@@ -268,11 +207,11 @@ struct ConfidenceBadge: View {
     let label: String
 
     var body: some View {
-        Text(label)
-            .font(.subheadline.weight(.semibold))
+        Text(label.capitalized)
+            .font(.footnote.weight(.semibold))
             .foregroundStyle(color)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
             .background(color.opacity(0.12), in: Capsule())
     }
 
@@ -281,9 +220,9 @@ struct ConfidenceBadge: View {
         case "high":
             return .green
         case "medium":
-            return AppTheme.gold
+            return .orange
         case "low":
-            return AppTheme.rose
+            return .red
         default:
             return .secondary
         }
@@ -293,38 +232,22 @@ struct ConfidenceBadge: View {
 struct WorthifyPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline.weight(.semibold))
+            .font(.headline)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 18)
+            .padding(.vertical, 14)
             .foregroundStyle(.white)
-            .background(
-                AppTheme.heroGradient.opacity(configuration.isPressed ? 0.88 : 1),
-                in: RoundedRectangle(cornerRadius: 22, style: .continuous)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .stroke(.white.opacity(0.24), lineWidth: 1)
-            )
-            .scaleEffect(configuration.isPressed ? 0.985 : 1)
-            .shadow(color: AppTheme.accent.opacity(configuration.isPressed ? 0.10 : 0.22), radius: 18, y: 10)
-            .animation(.easeOut(duration: 0.18), value: configuration.isPressed)
+            .background(AppTheme.accent.opacity(configuration.isPressed ? 0.8 : 1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
 struct WorthifySecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline.weight(.semibold))
+            .font(.headline)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 18)
-            .foregroundStyle(AppTheme.ink)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .stroke(.white.opacity(0.72), lineWidth: 1)
-            )
-            .scaleEffect(configuration.isPressed ? 0.985 : 1)
-            .animation(.easeOut(duration: 0.18), value: configuration.isPressed)
+            .padding(.vertical, 14)
+            .foregroundStyle(AppTheme.accent)
+            .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -335,18 +258,20 @@ struct EmptyStateCard: View {
 
     var body: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .center, spacing: 12) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(AppTheme.accent)
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
 
                 Text(title)
-                    .font(.system(.headline, design: .rounded, weight: .bold))
+                    .font(.headline)
 
                 Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             }
+            .frame(maxWidth: .infinity)
         }
     }
 }

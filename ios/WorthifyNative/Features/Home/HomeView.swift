@@ -47,7 +47,7 @@ struct HomeView: View {
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text(profile?.fullName ?? (isGuestMode ? "Guest mode" : "Worthify collector"))
-                            .font(.system(.title3, design: .rounded, weight: .bold))
+                            .font(.headline)
                             .foregroundStyle(AppTheme.ink)
 
                         Text(profile?.email ?? signedInSession?.email ?? (isGuestMode ? "Browsing without sign-in" : "No email available"))
@@ -108,7 +108,7 @@ struct HomeView: View {
 
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(item.titleText)
-                                        .font(.system(.headline, design: .rounded, weight: .bold))
+                                        .font(.headline)
 
                                     Text(item.subtitleText)
                                         .font(.subheadline)

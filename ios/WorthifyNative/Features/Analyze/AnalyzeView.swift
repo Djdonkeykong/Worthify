@@ -15,43 +15,34 @@ struct AnalyzeView: View {
         WorthifyScreen {
             HeroPanel(
                 eyebrow: "Analyze",
-                title: "Bring the artwork forward.",
-                subtitle: "Pick a clear photo, upload it, and let the backend return a structured estimate."
-            ) {
-                HStack(spacing: 10) {
-                    MetricPill(title: "Upload", value: "Cloudinary")
-                    MetricPill(title: "Result", value: result == nil ? "Pending" : "Ready", tint: AppTheme.accentSecondary)
-                }
-            }
+                title: "Analyze artwork",
+                subtitle: "Choose an image and run the estimate."
+            )
 
             GlassCard {
-                SectionHeading("Selected image", subtitle: "A tight, glare-free photo gives the best result.")
+                SectionHeading("Selected image", subtitle: "A clear photo works best.")
 
                 if let previewImage {
                     previewImage
                         .resizable()
                         .scaledToFill()
                         .frame(maxWidth: .infinity)
-                        .frame(height: 280)
-                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                .stroke(.white.opacity(0.72), lineWidth: 1)
-                        )
+                        .frame(height: 240)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 } else {
                     VStack(alignment: .leading, spacing: 12) {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                .fill(.thinMaterial)
-                                .frame(height: 220)
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color(uiColor: .systemBackground))
+                                .frame(height: 200)
 
                             Image(systemName: "photo.badge.plus")
-                                .font(.system(size: 34, weight: .semibold))
-                                .foregroundStyle(AppTheme.accent)
+                                .font(.title)
+                                .foregroundStyle(.secondary)
                         }
 
                         Text("No image selected")
-                            .font(.system(.headline, design: .rounded, weight: .bold))
+                            .font(.headline)
 
                         Text("Choose an artwork photo from your library to begin.")
                             .font(.subheadline)
@@ -70,11 +61,11 @@ struct AnalyzeView: View {
                     ResultsView(result: result)
                 } label: {
                     GlassCard {
-                        SectionHeading("Latest result")
+                        SectionHeading("Latest result", subtitle: "Open the most recent analysis.")
 
                         VStack(alignment: .leading, spacing: 8) {
                             Text(result.titleText)
-                                .font(.system(.title3, design: .rounded, weight: .bold))
+                                .font(.headline)
                             Text(result.artistText)
                                 .foregroundStyle(.secondary)
 

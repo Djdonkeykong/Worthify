@@ -9,7 +9,6 @@ struct WorthifyNativeApp: App {
             RootView()
                 .environmentObject(environment)
                 .tint(AppTheme.accent)
-                .fontDesign(.rounded)
         }
     }
 }
