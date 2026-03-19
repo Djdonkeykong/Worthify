@@ -15,6 +15,8 @@ settings:
     MARKETING_VERSION: 1.0.0
     INFOPLIST_FILE: WorthifyNative/Info.plist
     PRODUCT_BUNDLE_IDENTIFIER: com.worthify.worthify
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    TARGETED_DEVICE_FAMILY: "1,2"
 targets:
   WorthifyNative:
     type: application
@@ -28,6 +30,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.worthify.worthify
         CODE_SIGN_ENTITLEMENTS: WorthifyNative/WorthifyNative.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     scheme:
       testTargets:
         - WorthifyNativeTests
