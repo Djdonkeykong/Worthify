@@ -4,6 +4,8 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
+      groups:
+        - worthify_env
       xcode: latest
       vars:
         XCODE_PROJECT_DIR: ios
@@ -76,6 +78,8 @@ workflows:
     integrations:
       app_store_connect: Snaplook Codemagic
     environment:
+      groups:
+        - worthify_env
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.worthify.worthify
