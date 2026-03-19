@@ -29,7 +29,6 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.worthify.worthify
-        CODE_SIGN_ENTITLEMENTS: WorthifyNative/WorthifyNative.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     scheme:
       testTargets:

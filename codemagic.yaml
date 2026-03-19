@@ -38,24 +38,48 @@ workflows:
           cat > "$XCODE_PROJECT_DIR/Config/Base.xcconfig" <<EOF
           APP_DISPLAY_NAME = "${APP_DISPLAY_NAME}"
           APP_GROUP_ID = "${APP_GROUP_ID}"
-          
-          SUPABASE_URL = "${SUPABASE_URL}"
-          SUPABASE_ANON_KEY = "${SUPABASE_ANON_KEY}"
-          ARTWORK_ENDPOINT = "${ARTWORK_ENDPOINT}"
-          DETECT_ENDPOINT = "${DETECT_ENDPOINT}"
-          DETECT_AND_SEARCH_ENDPOINT = "${DETECT_AND_SEARCH_ENDPOINT}"
-          SEARCHAPI_KEY = "${SEARCHAPI_KEY}"
-          APIFY_API_TOKEN = "${APIFY_API_TOKEN}"
-          CLOUDINARY_CLOUD_NAME = "${CLOUDINARY_CLOUD_NAME}"
-          CLOUDINARY_API_KEY = "${CLOUDINARY_API_KEY}"
-          CLOUDINARY_API_SECRET = "${CLOUDINARY_API_SECRET}"
-          AMPLITUDE_API_KEY = "${AMPLITUDE_API_KEY}"
-          REVENUECAT_IOS_API_KEY = "${REVENUECAT_IOS_API_KEY}"
-          SUPERWALL_IOS_API_KEY = "${SUPERWALL_IOS_API_KEY}"
+          EOF
+          cat > "$XCODE_PROJECT_DIR/WorthifyNative/RuntimeConfig.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>SUPABASE_URL</key>
+            <string>${SUPABASE_URL}</string>
+            <key>SUPABASE_ANON_KEY</key>
+            <string>${SUPABASE_ANON_KEY}</string>
+            <key>ARTWORK_ENDPOINT</key>
+            <string>${ARTWORK_ENDPOINT}</string>
+            <key>DETECT_ENDPOINT</key>
+            <string>${DETECT_ENDPOINT}</string>
+            <key>DETECT_AND_SEARCH_ENDPOINT</key>
+            <string>${DETECT_AND_SEARCH_ENDPOINT}</string>
+            <key>SEARCHAPI_KEY</key>
+            <string>${SEARCHAPI_KEY}</string>
+            <key>APIFY_API_TOKEN</key>
+            <string>${APIFY_API_TOKEN}</string>
+            <key>CLOUDINARY_CLOUD_NAME</key>
+            <string>${CLOUDINARY_CLOUD_NAME}</string>
+            <key>CLOUDINARY_API_KEY</key>
+            <string>${CLOUDINARY_API_KEY}</string>
+            <key>CLOUDINARY_API_SECRET</key>
+            <string>${CLOUDINARY_API_SECRET}</string>
+            <key>AMPLITUDE_API_KEY</key>
+            <string>${AMPLITUDE_API_KEY}</string>
+            <key>REVENUECAT_IOS_API_KEY</key>
+            <string>${REVENUECAT_IOS_API_KEY}</string>
+            <key>SUPERWALL_IOS_API_KEY</key>
+            <string>${SUPERWALL_IOS_API_KEY}</string>
+            <key>APP_GROUP_ID</key>
+            <string>${APP_GROUP_ID}</string>
+            <key>BYPASS_AUTH</key>
+            <string>true</string>
+          </dict>
+          </plist>
           EOF
       - name: Verify generated Supabase config
         script: |
-          grep '^SUPABASE_URL' "$XCODE_PROJECT_DIR/Config/Base.xcconfig"
+          /usr/libexec/PlistBuddy -c "Print :SUPABASE_URL" "$XCODE_PROJECT_DIR/WorthifyNative/RuntimeConfig.plist"
       - name: Generate Xcode project
         script: |
           cd "$XCODE_PROJECT_DIR"
@@ -119,24 +143,48 @@ workflows:
           cat > "$XCODE_PROJECT_DIR/Config/Base.xcconfig" <<EOF
           APP_DISPLAY_NAME = "${APP_DISPLAY_NAME}"
           APP_GROUP_ID = "${APP_GROUP_ID}"
-          
-          SUPABASE_URL = "${SUPABASE_URL}"
-          SUPABASE_ANON_KEY = "${SUPABASE_ANON_KEY}"
-          ARTWORK_ENDPOINT = "${ARTWORK_ENDPOINT}"
-          DETECT_ENDPOINT = "${DETECT_ENDPOINT}"
-          DETECT_AND_SEARCH_ENDPOINT = "${DETECT_AND_SEARCH_ENDPOINT}"
-          SEARCHAPI_KEY = "${SEARCHAPI_KEY}"
-          APIFY_API_TOKEN = "${APIFY_API_TOKEN}"
-          CLOUDINARY_CLOUD_NAME = "${CLOUDINARY_CLOUD_NAME}"
-          CLOUDINARY_API_KEY = "${CLOUDINARY_API_KEY}"
-          CLOUDINARY_API_SECRET = "${CLOUDINARY_API_SECRET}"
-          AMPLITUDE_API_KEY = "${AMPLITUDE_API_KEY}"
-          REVENUECAT_IOS_API_KEY = "${REVENUECAT_IOS_API_KEY}"
-          SUPERWALL_IOS_API_KEY = "${SUPERWALL_IOS_API_KEY}"
+          EOF
+          cat > "$XCODE_PROJECT_DIR/WorthifyNative/RuntimeConfig.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>SUPABASE_URL</key>
+            <string>${SUPABASE_URL}</string>
+            <key>SUPABASE_ANON_KEY</key>
+            <string>${SUPABASE_ANON_KEY}</string>
+            <key>ARTWORK_ENDPOINT</key>
+            <string>${ARTWORK_ENDPOINT}</string>
+            <key>DETECT_ENDPOINT</key>
+            <string>${DETECT_ENDPOINT}</string>
+            <key>DETECT_AND_SEARCH_ENDPOINT</key>
+            <string>${DETECT_AND_SEARCH_ENDPOINT}</string>
+            <key>SEARCHAPI_KEY</key>
+            <string>${SEARCHAPI_KEY}</string>
+            <key>APIFY_API_TOKEN</key>
+            <string>${APIFY_API_TOKEN}</string>
+            <key>CLOUDINARY_CLOUD_NAME</key>
+            <string>${CLOUDINARY_CLOUD_NAME}</string>
+            <key>CLOUDINARY_API_KEY</key>
+            <string>${CLOUDINARY_API_KEY}</string>
+            <key>CLOUDINARY_API_SECRET</key>
+            <string>${CLOUDINARY_API_SECRET}</string>
+            <key>AMPLITUDE_API_KEY</key>
+            <string>${AMPLITUDE_API_KEY}</string>
+            <key>REVENUECAT_IOS_API_KEY</key>
+            <string>${REVENUECAT_IOS_API_KEY}</string>
+            <key>SUPERWALL_IOS_API_KEY</key>
+            <string>${SUPERWALL_IOS_API_KEY}</string>
+            <key>APP_GROUP_ID</key>
+            <string>${APP_GROUP_ID}</string>
+            <key>BYPASS_AUTH</key>
+            <string>true</string>
+          </dict>
+          </plist>
           EOF
       - name: Verify generated Supabase config
         script: |
-          grep '^SUPABASE_URL' "$XCODE_PROJECT_DIR/Config/Base.xcconfig"
+          /usr/libexec/PlistBuddy -c "Print :SUPABASE_URL" "$XCODE_PROJECT_DIR/WorthifyNative/RuntimeConfig.plist"
       - name: Generate Xcode project
         script: |
           cd "$XCODE_PROJECT_DIR"

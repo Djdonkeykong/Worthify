@@ -50,8 +50,13 @@ struct AppConfig {
     }
 
     static func load(bundle: Bundle = .main) -> AppConfig {
+        let runtimeConfig = runtimeConfigDictionary(bundle: bundle)
+
         func value(_ key: String) -> String {
-            bundle.object(forInfoDictionaryKey: key) as? String ?? ""
+            if let runtimeValue = runtimeConfig[key] as? String {
+                return runtimeValue
+            }
+            return bundle.object(forInfoDictionaryKey: key) as? String ?? ""
         }
 
         return AppConfig(
@@ -75,5 +80,16 @@ struct AppConfig {
                 return raw != "0" && raw != "false" && raw != "no"
             }()
         )
+    }
+
+    private static func runtimeConfigDictionary(bundle: Bundle) -> [String: Any] {
+        guard let url = bundle.url(forResource: "RuntimeConfig", withExtension: "plist"),
+              let data = try? Data(contentsOf: url),
+              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil),
+              let dictionary = plist as? [String: Any] else {
+            return [:]
+        }
+
+        return dictionary
     }
 }
