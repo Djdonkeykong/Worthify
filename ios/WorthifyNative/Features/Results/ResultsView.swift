@@ -23,7 +23,7 @@ struct ResultsView: View {
         ZStack {
             AppBackdrop()
 
-            ScrollView {
+            ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: 22) {
                         resultImage
 
@@ -115,7 +115,9 @@ struct ResultsView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 120)
             }
+            .scrollBounceBehavior(.basedOnSize, axes: .vertical)
         }
+        .clipped()
         .navigationTitle("Result")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
@@ -273,7 +275,7 @@ struct ResultsView: View {
             coreTraits.append("\(originality.capitalized) format")
         }
         if !coreTraits.isEmpty {
-            snippets.append("Key traits: \(sentenceCase(coreTraits.joined(separator: ", "))).")
+            snippets.append("Short summary: \(sentenceCase(coreTraits.joined(separator: ", "))).")
         }
 
         if displayValue != "Value unavailable" {

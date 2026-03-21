@@ -131,9 +131,8 @@ struct AnalyzeView: View {
 
             VStack(spacing: 24) {
                 ProgressView()
-                    .progressViewStyle(.circular)
                     .tint(.white)
-                    .scaleEffect(1.9)
+                    .controlSize(.large)
 
                 Text("Analyzing artwork...")
                     .font(.headline.weight(.semibold))
@@ -152,14 +151,8 @@ struct AnalyzeView: View {
                 previewImage
                     .resizable()
                     .scaledToFit()
-                    .frame(maxWidth: .infinity)
-                    .frame(height: imageDisplayHeight(for: size))
-                    .background(Color.black.opacity(0.10))
-                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .stroke(Color.black.opacity(0.22), lineWidth: 1.5)
-                    }
+                    .frame(maxWidth: .infinity, maxHeight: imageDisplayHeight(for: size))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .padding(.horizontal, 8)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
