@@ -45,6 +45,11 @@ struct AnalyzeView: View {
 
                         Spacer()
                     }
+                    .overlay {
+                        Text("Analyze")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.white)
+                    }
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
 
@@ -153,6 +158,7 @@ struct AnalyzeView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: imageDisplayHeight(for: size))
                     .padding(.horizontal, 8)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.top, 68)

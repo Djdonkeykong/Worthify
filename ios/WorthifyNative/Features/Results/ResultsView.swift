@@ -28,7 +28,7 @@ struct ResultsView: View {
                     resultImage
 
                     VStack(alignment: .leading, spacing: 12) {
-                        Text(result.titleText)
+                        Text(displayTitleText)
                             .font(.system(size: 40, weight: .bold, design: .rounded))
                             .lineLimit(2)
                             .minimumScaleFactor(0.75)
@@ -46,15 +46,17 @@ struct ResultsView: View {
                                         .font(.subheadline.weight(.semibold))
                                 }
 
-                            Text(result.artistText)
+                            Text(displayArtistText)
                                 .font(.title3.weight(.semibold))
                         }
 
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(descriptionText)
+                            Text(layoutSafeDescriptionText)
                                 .font(.body)
                                 .foregroundStyle(AppTheme.ink)
                                 .lineLimit(5)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .fixedSize(horizontal: false, vertical: true)
 
                             if shouldShowMore {
                                 Button("more") {
@@ -67,6 +69,7 @@ struct ResultsView: View {
                             }
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                     Divider()
 
@@ -104,6 +107,7 @@ struct ResultsView: View {
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 120)
@@ -123,7 +127,7 @@ struct ResultsView: View {
             .background(.ultraThinMaterial)
         }
         .sheet(isPresented: $showFullDescription) {
-            DescriptionSheet(text: descriptionText)
+            DescriptionSheet(text: layoutSafeDescriptionText)
                 .presentationDetents([.large])
                 .presentationDragIndicator(.hidden)
         }
@@ -183,9 +187,30 @@ struct ResultsView: View {
     }
 
     private var artistInitial: String {
-        let artist = result.artistText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let first = artist.first else { return "A" }
+        let artist = (nonEmpty(result.identifiedArtist) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let first = artist.first else { return "?" }
         return String(first).uppercased()
+    }
+
+    private var isArtworkIdentified: Bool {
+        nonEmpty(result.artworkTitle) != nil
+    }
+
+    private var displayTitleText: String {
+        if isArtworkIdentified {
+            return result.titleText
+        }
+        return "Artwork not identified yet"
+    }
+
+    private var displayArtistText: String {
+        if isArtworkIdentified {
+            return result.artistText
+        }
+        if let artist = nonEmpty(result.identifiedArtist) {
+            return "Possible artist: \(artist)"
+        }
+        return "No confident artist match yet"
     }
 
     private var displayValue: String {
@@ -197,9 +222,14 @@ struct ResultsView: View {
     }
 
     private var descriptionText: String {
+        if !isArtworkIdentified {
+            return unidentifiedDescriptionText
+        }
+
         let blocks = [
-            nonEmpty(result.valueReasoning),
-            nonEmpty(result.comparableExamplesSummary)
+            artworkContextText,
+            artistContextText,
+            valuationContextText
         ].compactMap { $0 }
 
         if !blocks.isEmpty {
@@ -210,19 +240,28 @@ struct ResultsView: View {
             return summaryText
         }
 
-        if let style = nonEmpty(result.style) {
-            return style
-        }
-
-        if let medium = nonEmpty(result.mediumGuess) {
-            return medium
-        }
-
         return "No additional details are available for this artwork."
     }
 
     private var shouldShowMore: Bool {
         descriptionText.count > 220
+    }
+
+    private var layoutSafeDescriptionText: String {
+        addSoftWrapOpportunities(to: descriptionText)
+    }
+
+    private var unidentifiedDescriptionText: String {
+        var parts: [String] = [
+            "We couldn't confidently identify this artwork from the current image.",
+            "Try again with a straight-on photo that fills more of the frame, has good lighting, and minimizes glare from glass."
+        ]
+
+        if let artist = nonEmpty(result.identifiedArtist) {
+            parts.append("Possible artist match: \(artist).")
+        }
+
+        return parts.joined(separator: " ")
     }
 
     private var detailRows: [(icon: String, value: String)] {
@@ -247,10 +286,57 @@ struct ResultsView: View {
         }
 
         if rows.count == 1 {
-            rows.append(("banknote", displayValue))
+            if displayValue != "Value unavailable" {
+                rows.append(("banknote", displayValue))
+            } else if !isArtworkIdentified {
+                rows.append(("camera.viewfinder", "Try another photo for a stronger match"))
+            }
         }
 
         return rows
+    }
+
+    private var artworkContextText: String? {
+        var details: [String] = []
+
+        if let year = nonEmpty(result.yearEstimate) {
+            details.append("year estimate \(year)")
+        }
+        if let medium = nonEmpty(result.mediumGuess) {
+            details.append("medium \(medium)")
+        }
+        if let style = nonEmpty(result.style) {
+            details.append("style \(style)")
+        }
+        if let originality = nonEmpty(result.isOriginalOrPrint) {
+            details.append("\(originality.capitalized) format")
+        }
+
+        guard !details.isEmpty else { return nil }
+        return "Artwork details: \(details.joined(separator: ", "))."
+    }
+
+    private var artistContextText: String? {
+        let artist = result.artistText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !artist.isEmpty else { return nil }
+        return "Artist: \(artist)."
+    }
+
+    private var valuationContextText: String? {
+        var parts: [String] = []
+
+        if displayValue != "Value unavailable" {
+            parts.append("Estimated value: \(displayValue).")
+        }
+        if let reasoning = nonEmpty(result.valueReasoning) {
+            parts.append(reasoning)
+        }
+        if let comps = nonEmpty(result.comparableExamplesSummary) {
+            parts.append(comps)
+        }
+
+        guard !parts.isEmpty else { return nil }
+        return parts.joined(separator: " ")
     }
 
     private func nonEmpty(_ value: String?) -> String? {
@@ -288,6 +374,33 @@ struct ResultsView: View {
             options: .regularExpression
         )
         return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    private func addSoftWrapOpportunities(to text: String) -> String {
+        text
+            .split(separator: " ", omittingEmptySubsequences: false)
+            .map { token in
+                let raw = String(token)
+                guard raw.count > 28 else { return raw }
+                return softWrappedToken(raw)
+            }
+            .joined(separator: " ")
+    }
+
+    private func softWrappedToken(_ token: String) -> String {
+        let softBreak = "\u{200B}"
+        let punctuated = token
+            .replacingOccurrences(of: "/", with: "/\(softBreak)")
+            .replacingOccurrences(of: "_", with: "_\(softBreak)")
+            .replacingOccurrences(of: "-", with: "-\(softBreak)")
+
+        var result = ""
+        for (index, character) in punctuated.enumerated() {
+            if index > 0, index.isMultiple(of: 18) {
+                result.append(softBreak)
+            }
+            result.append(character)
+        }
+        return result
     }
 }
 
@@ -344,3 +457,4 @@ private struct DescriptionSheet: View {
         }
     }
 }
+
