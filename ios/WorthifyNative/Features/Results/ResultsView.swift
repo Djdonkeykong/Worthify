@@ -117,6 +117,7 @@ struct ResultsView: View {
                     .padding(.top, 8)
                     .padding(.bottom, 120)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }
         .navigationTitle("Result")
@@ -262,6 +263,7 @@ struct ResultsView: View {
         }
 
         var snippets: [String] = []
+        let hasDisplayedValue = displayValue != "Value unavailable"
         var coreTraits: [String] = []
         if let year = nonEmpty(result.yearEstimate) {
             coreTraits.append("year estimate \(year)")
@@ -279,14 +281,20 @@ struct ResultsView: View {
             snippets.append("Short summary: \(sentenceCase(coreTraits.joined(separator: ", "))).")
         }
 
-        if displayValue != "Value unavailable" {
+        if hasDisplayedValue {
             snippets.append("Estimated value: \(displayValue).")
         }
 
         if let reasoning = nonEmpty(result.valueReasoning) {
-            snippets.append(sentenceCase(firstSentence(in: reasoning, fallbackLimit: 160)))
+            let reasoningSentence = sentenceCase(firstSentence(in: reasoning, fallbackLimit: 160))
+            if let cleanedReasoning = nonEmpty(sanitizedPriceNarrative(reasoningSentence, hasDisplayedValue: hasDisplayedValue)) {
+                snippets.append(cleanedReasoning)
+            }
         } else if let comps = nonEmpty(result.comparableExamplesSummary) {
-            snippets.append(sentenceCase(firstSentence(in: comps, fallbackLimit: 160)))
+            let compsSentence = sentenceCase(firstSentence(in: comps, fallbackLimit: 160))
+            if let cleanedComps = nonEmpty(sanitizedPriceNarrative(compsSentence, hasDisplayedValue: hasDisplayedValue)) {
+                snippets.append(cleanedComps)
+            }
         }
 
         if let summaryText = nonEmpty(result.summaryText), snippets.isEmpty {
@@ -329,11 +337,23 @@ struct ResultsView: View {
         }
 
         if let reasoning = nonEmpty(result.valueReasoning) {
-            rows.append(("text.quote", "Value reasoning", layoutSafeInlineText(sentenceCase(reasoning))))
+            let cleanedReasoning = sanitizedPriceNarrative(
+                sentenceCase(reasoning),
+                hasDisplayedValue: displayValue != "Value unavailable"
+            )
+            if let cleanedReasoning = nonEmpty(cleanedReasoning) {
+                rows.append(("text.quote", "Value reasoning", layoutSafeInlineText(cleanedReasoning)))
+            }
         }
 
         if let comps = nonEmpty(result.comparableExamplesSummary) {
-            rows.append(("list.bullet.rectangle.portrait", "Comparable examples", layoutSafeInlineText(sentenceCase(comps))))
+            let cleanedComps = sanitizedPriceNarrative(
+                sentenceCase(comps),
+                hasDisplayedValue: displayValue != "Value unavailable"
+            )
+            if let cleanedComps = nonEmpty(cleanedComps) {
+                rows.append(("list.bullet.rectangle.portrait", "Comparable examples", layoutSafeInlineText(cleanedComps)))
+            }
         }
 
         if !isArtworkIdentified {
@@ -400,6 +420,42 @@ struct ResultsView: View {
         return normalized
     }
 
+    private func sanitizedPriceNarrative(_ text: String, hasDisplayedValue: Bool) -> String {
+        guard hasDisplayedValue else { return text }
+
+        var sanitized = text
+        let patterns = [
+            #"no\s+price\s+provided(?:\s+in\s+source\s+text)?\.?"#,
+            #"price\s+not\s+provided(?:\s+in\s+source\s+text)?\.?"#
+        ]
+
+        for pattern in patterns {
+            sanitized = sanitized.replacingOccurrences(
+                of: pattern,
+                with: "",
+                options: [.regularExpression, .caseInsensitive]
+            )
+        }
+
+        sanitized = sanitized.replacingOccurrences(
+            of: #"\s{2,}"#,
+            with: " ",
+            options: .regularExpression
+        )
+        sanitized = sanitized.replacingOccurrences(
+            of: #"^\s*[-,:;]\s*"#,
+            with: "",
+            options: .regularExpression
+        )
+        sanitized = sanitized.replacingOccurrences(
+            of: #"\s+([.,!?])"#,
+            with: "$1",
+            options: .regularExpression
+        )
+
+        return sanitized.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private func layoutSafeInlineText(_ text: String) -> String {
         let normalized = text
             .replacingOccurrences(of: "\u{00A0}", with: " ")
@@ -419,13 +475,15 @@ struct ResultsView: View {
         if let rangeRegex = try? NSRegularExpression(pattern: rangePattern, options: [.caseInsensitive]),
            let match = rangeRegex.firstMatch(in: value, options: [], range: fullRange) {
             let matched = source.substring(with: match.range)
-            return cleanedAmount(matched)
+            let cleaned = cleanedAmount(matched)
+            return localizedPrice(from: cleaned) ?? cleaned
         }
 
         if let amountRegex = try? NSRegularExpression(pattern: amountPattern, options: [.caseInsensitive]),
            let match = amountRegex.firstMatch(in: value, options: [], range: fullRange) {
             let matched = source.substring(with: match.range)
-            return cleanedAmount(matched)
+            let cleaned = cleanedAmount(matched)
+            return localizedPrice(from: cleaned) ?? cleaned
         }
 
         return nil
@@ -440,6 +498,119 @@ struct ResultsView: View {
         )
         return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
+    private func localizedPrice(from value: String) -> String? {
+        let amountPattern = #"(?:[$]\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|\d[\d,]*(?:\.\d+)?\s*(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD))"#
+        guard let amountRegex = try? NSRegularExpression(pattern: amountPattern, options: [.caseInsensitive]) else {
+            return nil
+        }
+
+        let source = value as NSString
+        let fullRange = NSRange(location: 0, length: source.length)
+        let matches = amountRegex.matches(in: value, options: [], range: fullRange)
+        guard !matches.isEmpty else { return nil }
+
+        var localizedParts: [String] = []
+        localizedParts.reserveCapacity(matches.count)
+        for match in matches {
+            let token = source.substring(with: match.range)
+            guard let localizedToken = localizedAmountToken(token) else {
+                return nil
+            }
+            localizedParts.append(localizedToken)
+        }
+
+        if localizedParts.count >= 2,
+           value.range(of: #"\bto\b|-+"#, options: [.regularExpression, .caseInsensitive]) != nil {
+            return "\(localizedParts[0]) - \(localizedParts[1])"
+        }
+
+        return localizedParts.joined(separator: ", ")
+    }
+
+    private func localizedAmountToken(_ token: String) -> String? {
+        let cleaned = cleanedAmount(token)
+        let currency = currencyDescriptor(in: cleaned)
+        guard let amount = parsedAmount(in: cleaned) else {
+            return nil
+        }
+
+        let formatter = NumberFormatter()
+        formatter.locale = .autoupdatingCurrent
+        formatter.numberStyle = .currency
+
+        if let code = currency.code {
+            formatter.currencyCode = code
+        } else if let symbol = currency.symbol {
+            formatter.currencySymbol = symbol
+        }
+
+        if abs(amount.rounded() - amount) < 0.000_001 {
+            formatter.minimumFractionDigits = 0
+            formatter.maximumFractionDigits = 0
+        } else {
+            formatter.minimumFractionDigits = 0
+            formatter.maximumFractionDigits = 2
+        }
+
+        return formatter.string(from: NSNumber(value: amount))
+    }
+
+    private func currencyDescriptor(in token: String) -> (code: String?, symbol: String?) {
+        let supportedCodes = [
+            "USD", "EUR", "GBP", "NOK", "SEK", "DKK", "CAD", "AUD",
+            "CHF", "JPY", "CNY", "HKD", "SGD", "NZD"
+        ]
+
+        for code in supportedCodes {
+            let pattern = #"\b\#(code)\b"#
+            if token.range(of: pattern, options: [.regularExpression, .caseInsensitive]) != nil {
+                return (code: code, symbol: nil)
+            }
+        }
+
+        if token.contains("$") {
+            return (code: nil, symbol: "$")
+        }
+
+        return (code: nil, symbol: nil)
+    }
+
+    private func parsedAmount(in token: String) -> Double? {
+        var numeric = token.uppercased()
+        numeric = numeric.replacingOccurrences(
+            of: #"\b(USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)\b"#,
+            with: "",
+            options: .regularExpression
+        )
+        numeric = numeric.replacingOccurrences(of: "$", with: "")
+        numeric = numeric.replacingOccurrences(of: " ", with: "")
+        numeric = numeric.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !numeric.isEmpty else { return nil }
+
+        var multiplier = 1.0
+        if let suffix = numeric.last {
+            switch suffix {
+            case "K":
+                multiplier = 1_000
+                numeric.removeLast()
+            case "M":
+                multiplier = 1_000_000
+                numeric.removeLast()
+            case "B":
+                multiplier = 1_000_000_000
+                numeric.removeLast()
+            default:
+                break
+            }
+        }
+
+        numeric = numeric.replacingOccurrences(of: ",", with: "")
+        guard let base = Double(numeric) else { return nil }
+        return base * multiplier
+    }
+
     private func addSoftWrapOpportunities(to text: String) -> String {
         text
             .split(separator: " ", omittingEmptySubsequences: false)
