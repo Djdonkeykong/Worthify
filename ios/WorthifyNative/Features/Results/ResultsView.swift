@@ -20,105 +20,102 @@ struct ResultsView: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            let contentWidth = max(proxy.size.width - 32, 0)
+        ZStack {
+            AppBackdrop()
 
-            ZStack {
-                AppBackdrop()
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: 22) {
+                    resultImage
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 22) {
-                        resultImage
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(layoutSafeTitleText)
+                            .font(.system(size: 34, weight: .bold))
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.75)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text(layoutSafeTitleText)
-                                .font(.system(size: 34, weight: .bold))
-                                .lineLimit(2)
-                                .minimumScaleFactor(0.75)
-                                .multilineTextAlignment(.leading)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(displayValue)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(AppTheme.accentSecondary)
 
-                            Text(displayValue)
+                        HStack(spacing: 10) {
+                            Circle()
+                                .fill(Color(uiColor: .tertiarySystemFill))
+                                .frame(width: 36, height: 36)
+                                .overlay {
+                                    Text(artistInitial)
+                                        .font(.subheadline.weight(.semibold))
+                                }
+
+                            Text(layoutSafeArtistText)
                                 .font(.title3.weight(.semibold))
-                                .foregroundStyle(AppTheme.accentSecondary)
-
-                            HStack(spacing: 10) {
-                                Circle()
-                                    .fill(Color(uiColor: .tertiarySystemFill))
-                                    .frame(width: 36, height: 36)
-                                    .overlay {
-                                        Text(artistInitial)
-                                            .font(.subheadline.weight(.semibold))
-                                    }
-
-                                Text(layoutSafeArtistText)
-                                    .font(.title3.weight(.semibold))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(layoutSafeSummaryText)
-                                    .font(.body)
-                                    .lineLimit(5)
-                                    .foregroundStyle(AppTheme.ink)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .fixedSize(horizontal: false, vertical: true)
-
-                                if shouldShowMore {
-                                    Button("more") {
-                                        AppHaptics.mediumImpact()
-                                        showFullDescription = true
-                                    }
-                                    .font(.body.weight(.semibold))
-                                    .foregroundStyle(AppTheme.ink)
-                                    .frame(maxWidth: .infinity, alignment: .trailing)
-                                }
-                            }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                        Divider()
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(layoutSafeSummaryText)
+                                .font(.body)
+                                .lineLimit(5)
+                                .foregroundStyle(AppTheme.ink)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .fixedSize(horizontal: false, vertical: true)
 
-                        VStack(alignment: .leading, spacing: 14) {
-                            Text("Details")
-                                .font(.title2.weight(.bold))
-
-                            ForEach(Array(detailRows.enumerated()), id: \.offset) { index, row in
-                                DetailRow(icon: row.icon, title: row.title, value: row.value)
-
-                                if index != detailRows.count - 1 {
-                                    Divider()
-                                        .padding(.leading, 32)
+                            if shouldShowMore {
+                                Button("more") {
+                                    AppHaptics.mediumImpact()
+                                    showFullDescription = true
                                 }
-                            }
-
-                            Text(result.disclaimer)
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                                .padding(.top, 4)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(16)
-                        .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-                        if let saveMessage {
-                            GlassCard {
-                                Label(saveMessage, systemImage: saveMessage == "Saved." ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                                    .foregroundStyle(saveMessage == "Saved." ? .green : .secondary)
-                            }
-                        } else if isGuestMode {
-                            GlassCard {
-                                Label("Guest mode is enabled. Saving to collection is disabled for now.", systemImage: "lock.slash")
-                                    .foregroundStyle(.secondary)
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(AppTheme.ink)
+                                .frame(maxWidth: .infinity, alignment: .trailing)
                             }
                         }
                     }
-                    .frame(width: contentWidth, alignment: .leading)
-                    .padding(.top, 8)
-                    .padding(.bottom, 120)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Divider()
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Details")
+                            .font(.title2.weight(.bold))
+
+                        ForEach(Array(detailRows.enumerated()), id: \.offset) { index, row in
+                            DetailRow(icon: row.icon, title: row.title, value: row.value)
+
+                            if index != detailRows.count - 1 {
+                                Divider()
+                                    .padding(.leading, 32)
+                            }
+                        }
+
+                        Text(layoutSafeInlineText(result.disclaimer))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 4)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                    if let saveMessage {
+                        GlassCard {
+                            Label(saveMessage, systemImage: saveMessage == "Saved." ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                .foregroundStyle(saveMessage == "Saved." ? .green : .secondary)
+                        }
+                    } else if isGuestMode {
+                        GlassCard {
+                            Label("Guest mode is enabled. Saving to collection is disabled for now.", systemImage: "lock.slash")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
-                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 8)
+                .padding(.bottom, 120)
             }
+            .contentMargins(.horizontal, 16, for: .scrollContent)
+            .scrollBounceBehavior(.basedOnSize, axes: .vertical)
         }
         .navigationTitle("Result")
         .navigationBarTitleDisplayMode(.inline)
@@ -467,8 +464,14 @@ struct ResultsView: View {
     }
 
     private func extractedPrice(from value: String) -> String? {
-        let amountPattern = #"(?:[$]\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|\d[\d,]*(?:\.\d+)?\s*(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD))"#
-        let rangePattern = #"(?:[$]\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|\d[\d,]*(?:\.\d+)?\s*(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD))\s*(?:to|-)\s*(?:[$]\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|\d[\d,]*(?:\.\d+)?\s*(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD))"#
+        let numberPattern = #"\d(?:[\d\s.,'’]*\d)?(?:\s?[kKmMbB])?"#
+        let currencyCodePattern = #"(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)"#
+        let currencySymbolPattern = #"(?:[$€£¥₹₩₪₽])"#
+        let amountWithCurrencyPattern = #"(?:\#(currencySymbolPattern)\s*\#(numberPattern)|\#(currencyCodePattern)\s*\#(numberPattern)|\#(numberPattern)\s*\#(currencyCodePattern))"#
+        let amountMaybeCurrencyPattern = #"(?:\#(amountWithCurrencyPattern)|\#(numberPattern))"#
+        let rangeSeparatorPattern = #"(?:to|–|—|−|-)"#
+        let rangePattern = #"\#(amountWithCurrencyPattern)\s*\#(rangeSeparatorPattern)\s*\#(amountMaybeCurrencyPattern)"#
+
         let source = value as NSString
         let fullRange = NSRange(location: 0, length: source.length)
 
@@ -479,7 +482,7 @@ struct ResultsView: View {
             return localizedPrice(from: cleaned) ?? cleaned
         }
 
-        if let amountRegex = try? NSRegularExpression(pattern: amountPattern, options: [.caseInsensitive]),
+        if let amountRegex = try? NSRegularExpression(pattern: amountWithCurrencyPattern, options: [.caseInsensitive]),
            let match = amountRegex.firstMatch(in: value, options: [], range: fullRange) {
             let matched = source.substring(with: match.range)
             let cleaned = cleanedAmount(matched)
@@ -492,16 +495,26 @@ struct ResultsView: View {
     private func cleanedAmount(_ value: String) -> String {
         var cleaned = value.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
         cleaned = cleaned.replacingOccurrences(
-            of: #"([$])\s+(\d)"#,
+            of: #"([$€£¥₹₩₪₽])\s+(\d)"#,
             with: "$1$2",
+            options: .regularExpression
+        )
+        cleaned = cleaned.replacingOccurrences(
+            of: #"\s*(?:–|—|−)\s*"#,
+            with: " - ",
             options: .regularExpression
         )
         return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func localizedPrice(from value: String) -> String? {
-        let amountPattern = #"(?:[$]\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|\d[\d,]*(?:\.\d+)?\s*(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD))"#
-        guard let amountRegex = try? NSRegularExpression(pattern: amountPattern, options: [.caseInsensitive]) else {
+        let numberPattern = #"\d(?:[\d\s.,'’]*\d)?(?:\s?[kKmMbB])?"#
+        let currencyCodePattern = #"(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)"#
+        let currencySymbolPattern = #"(?:[$€£¥₹₩₪₽])"#
+        let amountWithCurrencyPattern = #"(?:\#(currencySymbolPattern)\s*\#(numberPattern)|\#(currencyCodePattern)\s*\#(numberPattern)|\#(numberPattern)\s*\#(currencyCodePattern))"#
+        let amountTokenPattern = #"(?:\#(amountWithCurrencyPattern)|\#(numberPattern))"#
+
+        guard let amountRegex = try? NSRegularExpression(pattern: amountTokenPattern, options: [.caseInsensitive]) else {
             return nil
         }
 
@@ -512,25 +525,49 @@ struct ResultsView: View {
 
         var localizedParts: [String] = []
         localizedParts.reserveCapacity(matches.count)
+        var activeCurrency: (code: String?, symbol: String?) = (nil, nil)
+
         for match in matches {
             let token = source.substring(with: match.range)
-            guard let localizedToken = localizedAmountToken(token) else {
+            let explicitCurrency = currencyDescriptor(in: token)
+            let hasExplicitCurrency = explicitCurrency.code != nil || explicitCurrency.symbol != nil
+            let effectiveCurrency = hasExplicitCurrency ? explicitCurrency : activeCurrency
+
+            guard let localizedToken = localizedAmountToken(token, currencyOverride: effectiveCurrency) else {
                 return nil
             }
             localizedParts.append(localizedToken)
+
+            if hasExplicitCurrency {
+                activeCurrency = explicitCurrency
+            }
         }
 
         if localizedParts.count >= 2,
-           value.range(of: #"\bto\b|-+"#, options: [.regularExpression, .caseInsensitive]) != nil {
+           value.range(of: #"\bto\b|[–—−-]+"#, options: [.regularExpression, .caseInsensitive]) != nil {
             return "\(localizedParts[0]) - \(localizedParts[1])"
         }
 
-        return localizedParts.joined(separator: ", ")
+        return localizedParts.first
     }
 
-    private func localizedAmountToken(_ token: String) -> String? {
+    private func localizedAmountToken(
+        _ token: String,
+        currencyOverride: (code: String?, symbol: String?)
+    ) -> String? {
         let cleaned = cleanedAmount(token)
-        let currency = currencyDescriptor(in: cleaned)
+        let detectedCurrency = currencyDescriptor(in: cleaned)
+        let effectiveCurrency: (code: String?, symbol: String?) = {
+            if detectedCurrency.code != nil || detectedCurrency.symbol != nil {
+                return detectedCurrency
+            }
+            return currencyOverride
+        }()
+
+        guard effectiveCurrency.code != nil || effectiveCurrency.symbol != nil else {
+            return nil
+        }
+
         guard let amount = parsedAmount(in: cleaned) else {
             return nil
         }
@@ -539,9 +576,9 @@ struct ResultsView: View {
         formatter.locale = .autoupdatingCurrent
         formatter.numberStyle = .currency
 
-        if let code = currency.code {
+        if let code = effectiveCurrency.code {
             formatter.currencyCode = code
-        } else if let symbol = currency.symbol {
+        } else if let symbol = effectiveCurrency.symbol {
             formatter.currencySymbol = symbol
         }
 
@@ -569,8 +606,9 @@ struct ResultsView: View {
             }
         }
 
-        if token.contains("$") {
-            return (code: nil, symbol: "$")
+        let symbolCandidates: [Character] = ["$", "€", "£", "¥", "₹", "₩", "₪", "₽"]
+        if let symbol = symbolCandidates.first(where: { token.contains($0) }) {
+            return (code: nil, symbol: String(symbol))
         }
 
         return (code: nil, symbol: nil)
@@ -583,9 +621,19 @@ struct ResultsView: View {
             with: "",
             options: .regularExpression
         )
-        numeric = numeric.replacingOccurrences(of: "$", with: "")
-        numeric = numeric.replacingOccurrences(of: " ", with: "")
+        numeric = numeric.replacingOccurrences(
+            of: #"[$€£¥₹₩₪₽]"#,
+            with: "",
+            options: .regularExpression
+        )
+        numeric = numeric.replacingOccurrences(
+            of: #"\s+"#,
+            with: "",
+            options: .regularExpression
+        )
         numeric = numeric.trimmingCharacters(in: .whitespacesAndNewlines)
+        numeric = numeric.replacingOccurrences(of: "\u{00A0}", with: "")
+        numeric = numeric.replacingOccurrences(of: "\u{202F}", with: "")
 
         guard !numeric.isEmpty else { return nil }
 
@@ -606,9 +654,69 @@ struct ResultsView: View {
             }
         }
 
-        numeric = numeric.replacingOccurrences(of: ",", with: "")
-        guard let base = Double(numeric) else { return nil }
+        guard !numeric.isEmpty else { return nil }
+        let normalized = normalizedNumericCore(numeric)
+        guard let base = Double(normalized) else { return nil }
         return base * multiplier
+    }
+
+    private func normalizedNumericCore(_ raw: String) -> String {
+        var value = raw
+            .replacingOccurrences(of: "'", with: "")
+            .replacingOccurrences(of: "’", with: "")
+            .replacingOccurrences(of: " ", with: "")
+
+        let commaCount = value.filter { $0 == "," }.count
+        let dotCount = value.filter { $0 == "." }.count
+
+        if commaCount > 0, dotCount > 0 {
+            if let lastComma = value.lastIndex(of: ","), let lastDot = value.lastIndex(of: ".") {
+                if lastDot > lastComma {
+                    value = value.replacingOccurrences(of: ",", with: "")
+                } else {
+                    value = value.replacingOccurrences(of: ".", with: "")
+                    value = value.replacingOccurrences(of: ",", with: ".")
+                }
+            }
+            return value
+        }
+
+        if commaCount > 0 {
+            if commaCount > 1 {
+                return value.replacingOccurrences(of: ",", with: "")
+            }
+
+            if let commaIndex = value.firstIndex(of: ",") {
+                let digitsAfter = digitCount(in: String(value[value.index(after: commaIndex)...]))
+                if digitsAfter == 3 {
+                    return value.replacingOccurrences(of: ",", with: "")
+                }
+                return value.replacingOccurrences(of: ",", with: ".")
+            }
+        }
+
+        if dotCount > 0 {
+            if dotCount > 1 {
+                return value.replacingOccurrences(of: ".", with: "")
+            }
+
+            if let dotIndex = value.firstIndex(of: ".") {
+                let digitsAfter = digitCount(in: String(value[value.index(after: dotIndex)...]))
+                if digitsAfter == 3 {
+                    return value.replacingOccurrences(of: ".", with: "")
+                }
+            }
+        }
+
+        return value
+    }
+
+    private func digitCount(in value: String) -> Int {
+        value.reduce(into: 0) { partialResult, character in
+            if character.isNumber {
+                partialResult += 1
+            }
+        }
     }
 
     private func addSoftWrapOpportunities(to text: String) -> String {
