@@ -117,7 +117,7 @@ struct ResultsView: View {
                     .padding(.top, 8)
                     .padding(.bottom, 120)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
             }
         }
         .navigationTitle("Result")

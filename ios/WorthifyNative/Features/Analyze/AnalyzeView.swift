@@ -3,7 +3,6 @@ import SwiftUI
 import UIKit
 
 struct AnalyzeView: View {
-    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var environment: AppEnvironment
     @State private var isRunning = false
     @State private var result: ArtworkAnalysis?
@@ -30,29 +29,6 @@ struct AnalyzeView: View {
                 backgroundLayer(size: proxy.size)
 
                 VStack {
-                    HStack {
-                        Button {
-                            AppHaptics.mediumImpact()
-                            dismiss()
-                        } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.title3.weight(.semibold))
-                                .foregroundStyle(.white)
-                                .frame(width: 52, height: 52)
-                                .background(Color.black.opacity(0.42), in: Circle())
-                        }
-                        .buttonStyle(.plain)
-
-                        Spacer()
-                    }
-                    .overlay {
-                        Text("Analyze")
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(.black)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
-
                     Spacer()
 
                     if let errorMessage {
@@ -98,10 +74,8 @@ struct AnalyzeView: View {
                 }
             }
         }
-        .navigationTitle("")
+        .navigationTitle("Analyze")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
-        .toolbar(.hidden, for: .navigationBar)
         .navigationDestination(item: $result) { analysis in
             ResultsView(result: analysis)
         }
