@@ -12,7 +12,9 @@ struct HomeView: View {
     @State private var latestSavedItem: SavedArtwork?
 
     var body: some View {
-        WorthifyScreen {
+        ZStack {
+            AppBackdrop()
+
             VStack(spacing: 20) {
                 previewArtwork
                     .frame(maxWidth: .infinity)
@@ -24,23 +26,24 @@ struct HomeView: View {
                     .multilineTextAlignment(.center)
 
                 Button {
+                    AppHaptics.mediumImpact()
                     selectedImageData = nil
                     showSourceSheet = true
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 26, weight: .semibold))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(AppTheme.primaryActionForeground)
-                        .frame(width: 128, height: 62)
+                        .frame(width: 88, height: 44)
                         .background(AppTheme.primaryActionBackground, in: Capsule())
                 }
                 .buttonStyle(.plain)
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, 20)
+            .frame(maxHeight: .infinity, alignment: .center)
+            .padding(.horizontal, 20)
         }
         .toolbar(.hidden, for: .navigationBar)
         .task { await loadLatestArtwork() }
-        .refreshable { await loadLatestArtwork() }
         .navigationDestination(isPresented: $navigateToAnalyze) {
             AnalyzeView(prefilledImageData: selectedImageData)
         }
@@ -218,16 +221,19 @@ private struct UploadSourceSheet: View {
     }
 
     private func sourceButton(title: String, iconAsset: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        Button {
+            AppHaptics.mediumImpact()
+            action()
+        } label: {
             VStack(spacing: 12) {
                 Image(iconAsset)
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
-                    .foregroundStyle(AppTheme.primaryActionForeground)
-                    .frame(width: 24, height: 24)
+                    .foregroundStyle(AppTheme.primaryActionBackground)
+                    .frame(width: 22, height: 22)
                     .frame(width: 46, height: 46)
-                    .background(AppTheme.brandAccent, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                 Text(title)
                     .font(.headline)

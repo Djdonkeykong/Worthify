@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum AppTheme {
     // Unified palette
@@ -18,6 +19,13 @@ enum AppTheme {
     static let primaryActionForeground = brandOnPrimary
     static let secondaryActionBackground = Color(uiColor: .tertiarySystemFill)
     static let secondaryActionForeground = brandPrimary
+}
+
+enum AppHaptics {
+    static func mediumImpact() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+    }
 }
 
 struct AppBackdrop: View {

@@ -9,7 +9,7 @@ struct RootTabView: View {
                 HomeView()
             }
             .tabItem {
-                Label("Home", systemImage: "house")
+                Label("Home", systemImage: "house.fill")
             }
             .tag(AppRouter.MainTab.home)
 
@@ -30,5 +30,8 @@ struct RootTabView: View {
             .tag(AppRouter.MainTab.profile)
         }
         .tabViewStyle(.automatic)
+        .onChange(of: environment.router.selectedTab) { _, _ in
+            AppHaptics.mediumImpact()
+        }
     }
 }

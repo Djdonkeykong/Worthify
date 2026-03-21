@@ -34,6 +34,7 @@ struct RootView: View {
             guard environment.router.rootRoute == .splash else { return }
             if environment.config.bypassAuth {
                 await environment.shareBridge.syncConfiguration()
+                await extendSplashDuration()
                 environment.router.rootRoute = .main
                 Task {
                     await environment.sessionStore.restore()
@@ -43,22 +44,32 @@ struct RootView: View {
             }
             if let startupValidationMessage = environment.config.startupValidationMessage {
                 environment.sessionStore.setStartupAlert(startupValidationMessage)
+                await extendSplashDuration()
                 environment.router.rootRoute = .auth
                 return
             }
             await environment.sessionStore.restore()
             await environment.shareBridge.syncConfiguration()
+            let nextRoute: AppRouter.RootRoute
             switch environment.sessionStore.state {
             case .restoring:
-                environment.router.rootRoute = .splash
+                nextRoute = .splash
             case .signedOut:
-                environment.router.rootRoute = .auth
+                nextRoute = .auth
             case .signedIn:
-                environment.router.rootRoute = .main
+                nextRoute = .main
             }
+            if nextRoute != .splash {
+                await extendSplashDuration()
+            }
+            environment.router.rootRoute = nextRoute
             Task {
                 await environment.notificationService.registerForPushIfNeeded()
             }
         }
+    }
+
+    private func extendSplashDuration() async {
+        try? await Task.sleep(nanoseconds: 500_000_000)
     }
 }
