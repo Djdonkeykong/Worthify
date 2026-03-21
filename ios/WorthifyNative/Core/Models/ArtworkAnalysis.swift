@@ -62,17 +62,17 @@ struct ArtworkAnalysis: Codable, Identifiable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = UUID()
-        identifiedArtist = try container.decodeIfPresent(String.self, forKey: .identifiedArtist)
-        artworkTitle = try container.decodeIfPresent(String.self, forKey: .artworkTitle)
-        yearEstimate = try container.decodeIfPresent(String.self, forKey: .yearEstimate)
-        style = try container.decodeIfPresent(String.self, forKey: .style)
-        mediumGuess = try container.decodeIfPresent(String.self, forKey: .mediumGuess)
-        isOriginalOrPrint = try container.decodeIfPresent(String.self, forKey: .isOriginalOrPrint)
-        confidenceLevel = try container.decode(String.self, forKey: .confidenceLevel)
-        estimatedValueRange = try container.decodeIfPresent(String.self, forKey: .estimatedValueRange)
-        valueReasoning = try container.decodeIfPresent(String.self, forKey: .valueReasoning)
-        comparableExamplesSummary = try container.decodeIfPresent(String.self, forKey: .comparableExamplesSummary)
-        disclaimer = try container.decode(String.self, forKey: .disclaimer)
+        identifiedArtist = container.decodeLossyStringIfPresent(forKey: .identifiedArtist)
+        artworkTitle = container.decodeLossyStringIfPresent(forKey: .artworkTitle)
+        yearEstimate = container.decodeLossyStringIfPresent(forKey: .yearEstimate)
+        style = container.decodeLossyStringIfPresent(forKey: .style)
+        mediumGuess = container.decodeLossyStringIfPresent(forKey: .mediumGuess)
+        isOriginalOrPrint = container.decodeLossyStringIfPresent(forKey: .isOriginalOrPrint)
+        confidenceLevel = container.decodeLossyStringIfPresent(forKey: .confidenceLevel) ?? "unknown"
+        estimatedValueRange = container.decodeLossyStringIfPresent(forKey: .estimatedValueRange)
+        valueReasoning = container.decodeLossyStringIfPresent(forKey: .valueReasoning)
+        comparableExamplesSummary = container.decodeLossyStringIfPresent(forKey: .comparableExamplesSummary)
+        disclaimer = container.decodeLossyStringIfPresent(forKey: .disclaimer) ?? "No disclaimer provided."
         sourceImageURL = nil
     }
 
@@ -173,5 +173,26 @@ private extension String {
     var nilIfEmpty: String? {
         let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+}
+
+private extension KeyedDecodingContainer where K == ArtworkAnalysis.CodingKeys {
+    func decodeLossyStringIfPresent(forKey key: K) -> String? {
+        if let value = try? decodeIfPresent(String.self, forKey: key) {
+            return value
+        }
+        if let value = try? decodeIfPresent(Int.self, forKey: key) {
+            return String(value)
+        }
+        if let value = try? decodeIfPresent(Double.self, forKey: key) {
+            return String(value)
+        }
+        if let value = try? decodeIfPresent(Bool.self, forKey: key) {
+            return value ? "true" : "false"
+        }
+        if let value = try? decodeIfPresent([String].self, forKey: key) {
+            return value.joined(separator: ", ")
+        }
+        return nil
     }
 }

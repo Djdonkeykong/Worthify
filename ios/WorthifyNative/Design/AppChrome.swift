@@ -1,13 +1,23 @@
 import SwiftUI
 
 enum AppTheme {
-    static let accent = Color.blue
-    static let accentSecondary = Color.teal
-    static let rose = Color.pink
-    static let gold = Color.orange
+    // Unified palette
+    static let brandPrimary = Color.black
+    static let brandAccent = Color(red: 1, green: 0, blue: 0.35)
+    static let brandOnPrimary = Color.white
+
+    static let accent = brandPrimary
+    static let accentSecondary = brandAccent
+    static let rose = brandAccent
+    static let gold = brandAccent
     static let ink = Color.primary
     static let pageBackground = Color(uiColor: .systemGroupedBackground)
     static let cardBackground = Color(uiColor: .secondarySystemGroupedBackground)
+
+    static let primaryActionBackground = brandPrimary
+    static let primaryActionForeground = brandOnPrimary
+    static let secondaryActionBackground = Color(uiColor: .tertiarySystemFill)
+    static let secondaryActionForeground = brandPrimary
 }
 
 struct AppBackdrop: View {
@@ -235,8 +245,11 @@ struct WorthifyPrimaryButtonStyle: ButtonStyle {
             .font(.headline)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .foregroundStyle(.white)
-            .background(AppTheme.accent.opacity(configuration.isPressed ? 0.8 : 1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .foregroundStyle(AppTheme.primaryActionForeground)
+            .background(
+                AppTheme.primaryActionBackground.opacity(configuration.isPressed ? 0.8 : 1),
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+            )
     }
 }
 
@@ -246,8 +259,11 @@ struct WorthifySecondaryButtonStyle: ButtonStyle {
             .font(.headline)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .foregroundStyle(AppTheme.accent)
-            .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .foregroundStyle(AppTheme.secondaryActionForeground)
+            .background(
+                AppTheme.secondaryActionBackground.opacity(configuration.isPressed ? 0.84 : 1),
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+            )
     }
 }
 

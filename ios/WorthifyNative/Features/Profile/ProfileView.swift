@@ -54,7 +54,7 @@ struct ProfileView: View {
 
                         Button("Upgrade") {}
                             .buttonStyle(.borderedProminent)
-                            .tint(.yellow)
+                            .tint(AppTheme.accentSecondary)
                     }
                 }
             }

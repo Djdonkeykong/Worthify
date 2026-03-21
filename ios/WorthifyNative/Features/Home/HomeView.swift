@@ -13,14 +13,14 @@ struct HomeView: View {
 
     var body: some View {
         WorthifyScreen {
-            VStack(spacing: 28) {
+            VStack(spacing: 20) {
                 previewArtwork
                     .frame(maxWidth: .infinity)
-                    .frame(height: 320)
+                    .frame(height: 220)
 
                 Text("Scan your first artwork\nwith Worthify")
-                    .font(.system(size: 56, weight: .bold))
-                    .lineSpacing(-2)
+                    .font(.system(size: 28, weight: .bold))
+                    .lineSpacing(2)
                     .multilineTextAlignment(.center)
 
                 Button {
@@ -28,15 +28,15 @@ struct HomeView: View {
                     showSourceSheet = true
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 34, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 176, height: 84)
-                        .background(Color(red: 1, green: 0, blue: 0.35), in: Capsule())
+                        .font(.system(size: 26, weight: .semibold))
+                        .foregroundStyle(AppTheme.primaryActionForeground)
+                        .frame(width: 128, height: 62)
+                        .background(AppTheme.primaryActionBackground, in: Capsule())
                 }
                 .buttonStyle(.plain)
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, 36)
+            .padding(.top, 20)
         }
         .toolbar(.hidden, for: .navigationBar)
         .task { await loadLatestArtwork() }
@@ -99,9 +99,10 @@ struct HomeView: View {
     }
 
     private var placeholderArtwork: some View {
-        Image("home-placeholder")
+        Image("HomePlaceholder")
             .resizable()
             .scaledToFit()
+            .frame(maxHeight: 220)
     }
 
     private func presentSourcePicker(_ sourceType: UIImagePickerController.SourceType) {
@@ -198,12 +199,12 @@ private struct UploadSourceSheet: View {
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 12) {
-                sourceButton(title: "Snap", systemImage: "camera.fill") {
+                sourceButton(title: "Snap", iconAsset: "ImportSnapSymbol") {
                     dismiss()
                     onTakePhoto()
                 }
 
-                sourceButton(title: "Upload", systemImage: "arrow.up.fill") {
+                sourceButton(title: "Upload", iconAsset: "ImportUploadSymbol") {
                     dismiss()
                     onUploadPhoto()
                 }
@@ -216,14 +217,17 @@ private struct UploadSourceSheet: View {
         .padding(.bottom, 16)
     }
 
-    private func sourceButton(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
+    private func sourceButton(title: String, iconAsset: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 12) {
-                Image(systemName: systemImage)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Color(red: 1, green: 0, blue: 0.35))
+                Image(iconAsset)
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(AppTheme.primaryActionForeground)
+                    .frame(width: 24, height: 24)
                     .frame(width: 46, height: 46)
-                    .background(Color(red: 1, green: 0, blue: 0.35).opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(AppTheme.brandAccent, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                 Text(title)
                     .font(.headline)

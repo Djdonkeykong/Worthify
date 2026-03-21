@@ -6,6 +6,7 @@ POST /identify -> identifies artwork from an image URL using SearchAPI.io + Clau
 import json
 import logging
 import os
+import time
 
 import anthropic
 import requests
@@ -94,12 +95,86 @@ def _truncate(text: str, limit: int = 500) -> str:
     return text[:limit] + "...[truncated]"
 
 
-def _call_searchapi(image_url: str) -> str:
-    """Call SearchAPI.io Google AI Mode with the artwork image. Returns raw text."""
+def _append_if_present(lines: list[str], value: object) -> None:
+    if isinstance(value, str):
+        text = value.strip()
+        if text:
+            lines.append(text)
+
+
+def _extract_source_text(data: dict) -> str:
+    lines: list[str] = []
+
+    _append_if_present(lines, data.get("markdown"))
+    _append_if_present(lines, data.get("answer"))
+    _append_if_present(lines, data.get("snippet"))
+
+    ai_overview = data.get("ai_overview")
+    if isinstance(ai_overview, dict):
+        _append_if_present(lines, ai_overview.get("answer"))
+        _append_if_present(lines, ai_overview.get("text"))
+        _append_if_present(lines, ai_overview.get("snippet"))
+
+        blocks = ai_overview.get("blocks")
+        if isinstance(blocks, list):
+            for block in blocks:
+                if isinstance(block, dict):
+                    _append_if_present(lines, block.get("answer"))
+                    _append_if_present(lines, block.get("text"))
+                    _append_if_present(lines, block.get("snippet"))
+
+    text_blocks = data.get("text_blocks")
+    if isinstance(text_blocks, list):
+        for block in text_blocks:
+            if isinstance(block, dict):
+                _append_if_present(lines, block.get("answer"))
+                _append_if_present(lines, block.get("text"))
+                _append_if_present(lines, block.get("snippet"))
+
+    reference_links = data.get("reference_links")
+    if isinstance(reference_links, list):
+        for link in reference_links:
+            if isinstance(link, dict):
+                _append_if_present(lines, link.get("title"))
+                _append_if_present(lines, link.get("snippet"))
+                _append_if_present(lines, link.get("source"))
+
+    organic_results = data.get("organic_results")
+    if isinstance(organic_results, list):
+        for result in organic_results[:8]:
+            if isinstance(result, dict):
+                _append_if_present(lines, result.get("title"))
+                _append_if_present(lines, result.get("snippet"))
+                _append_if_present(lines, result.get("source"))
+
+    visual_matches = data.get("visual_matches")
+    if isinstance(visual_matches, list):
+        for match in visual_matches[:15]:
+            if isinstance(match, dict):
+                _append_if_present(lines, match.get("title"))
+                _append_if_present(lines, match.get("source"))
+                _append_if_present(lines, match.get("price"))
+
+    deduped_lines: list[str] = []
+    seen: set[str] = set()
+    for line in lines:
+        normalized = " ".join(line.split())
+        if normalized and normalized not in seen:
+            deduped_lines.append(normalized)
+            seen.add(normalized)
+
+    return "\n".join(deduped_lines).strip()
+
+
+def _searchapi_params(image_url: str, engine: str) -> dict:
     params = {
-        "engine": "google_ai_mode",
+        "engine": engine,
         "api_key": SEARCHAPI_KEY,
-        "q": (
+        "url": image_url,
+    }
+
+    if engine == "google_ai_mode":
+        params["q"] = (
             "What artwork is this? Identify the artist, title, year created, artistic style "
             "or movement, medium (oil, watercolor, etc.), and whether this appears to be an "
             "original or a print/reproduction. "
@@ -108,27 +183,55 @@ def _call_searchapi(image_url: str) -> str:
             "that this artist's works typically sell for (e.g. at auction, galleries, or online), "
             "and note whether the artist is emerging, mid-career, or established. "
             "Mention any comparable auction results or sales you are aware of."
-        ),
-        "url": image_url,
-    }
-    resp = requests.get(
-        "https://www.searchapi.io/api/v1/search", params=params, timeout=30
-    )
-    resp.raise_for_status()
-    data = resp.json()
-
-    raw = data.get("markdown", "")
-    if not raw:
-        blocks = data.get("text_blocks") or data.get("ai_overview", {}).get("blocks", [])
-        raw = "\n".join(
-            b.get("answer", "") or b.get("text", "") for b in blocks if isinstance(b, dict)
         )
 
-    raw = raw.strip()
-    logger.info("SearchAPI returned %s characters of source text", len(raw))
-    if raw:
-        logger.debug("SearchAPI preview: %s", _truncate(raw))
-    return raw
+    return params
+
+
+def _call_searchapi(image_url: str) -> str:
+    """Call SearchAPI.io and return source text for Claude extraction."""
+    attempts = [
+        ("google_ai_mode", 2),
+        ("google_lens", 1),
+    ]
+
+    last_data_keys: list[str] = []
+    for engine, max_attempts in attempts:
+        for attempt in range(1, max_attempts + 1):
+            params = _searchapi_params(image_url=image_url, engine=engine)
+            logger.info("SearchAPI request engine=%s attempt=%s", engine, attempt)
+
+            resp = requests.get(
+                "https://www.searchapi.io/api/v1/search", params=params, timeout=30
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            last_data_keys = sorted(data.keys())
+
+            raw = _extract_source_text(data)
+            if raw:
+                logger.info(
+                    "SearchAPI returned %s characters of source text (engine=%s)",
+                    len(raw),
+                    engine,
+                )
+                logger.debug("SearchAPI preview: %s", _truncate(raw))
+                return raw
+
+            logger.warning(
+                "SearchAPI response had no extractable text (engine=%s, attempt=%s, keys=%s)",
+                engine,
+                attempt,
+                ",".join(last_data_keys),
+            )
+            if attempt < max_attempts:
+                time.sleep(1.0)
+
+    logger.info(
+        "SearchAPI returned 0 characters of source text after retries. Last keys=%s",
+        ",".join(last_data_keys),
+    )
+    return ""
 
 
 def _parse_with_claude(raw_text: str, strict: bool = False) -> dict:
@@ -159,6 +262,69 @@ def _parse_with_claude(raw_text: str, strict: bool = False) -> dict:
         preview = _truncate(text)
         logger.warning("Claude JSON parse failed (strict=%s): %s", strict, preview)
         raise ClaudeParseError(str(exc), preview) from exc
+
+
+def _normalize_text_field(value: object) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        text = value.strip()
+        return text or None
+    if isinstance(value, (int, float, bool)):
+        return str(value)
+    if isinstance(value, list):
+        pieces = []
+        for item in value:
+            if item is None:
+                continue
+            pieces.append(str(item).strip())
+        text = ", ".join(piece for piece in pieces if piece)
+        return text or None
+    if isinstance(value, dict):
+        return json.dumps(value, ensure_ascii=False)
+    return str(value).strip() or None
+
+
+def _normalize_confidence(value: object) -> str:
+    normalized = (_normalize_text_field(value) or "").lower()
+    if normalized in {"high", "medium", "low"}:
+        return normalized
+    if "high" in normalized:
+        return "high"
+    if "low" in normalized:
+        return "low"
+    return "medium"
+
+
+def _normalize_original_or_print(value: object) -> str:
+    normalized = (_normalize_text_field(value) or "").lower()
+    if normalized in {"original", "print", "unknown"}:
+        return normalized
+    if "print" in normalized:
+        return "print"
+    if "original" in normalized:
+        return "original"
+    return "unknown"
+
+
+def _normalize_analysis_result(result: dict) -> dict:
+    normalized = {
+        "identified_artist": _normalize_text_field(result.get("identified_artist")),
+        "artwork_title": _normalize_text_field(result.get("artwork_title")),
+        "year_estimate": _normalize_text_field(result.get("year_estimate")),
+        "style": _normalize_text_field(result.get("style")),
+        "medium_guess": _normalize_text_field(result.get("medium_guess")),
+        "is_original_or_print": _normalize_original_or_print(
+            result.get("is_original_or_print")
+        ),
+        "confidence_level": _normalize_confidence(result.get("confidence_level")),
+        "estimated_value_range": _normalize_text_field(result.get("estimated_value_range")),
+        "value_reasoning": _normalize_text_field(result.get("value_reasoning")),
+        "comparable_examples_summary": _normalize_text_field(
+            result.get("comparable_examples_summary")
+        ),
+    }
+    return normalized
 
 
 @app.get("/health")
@@ -197,11 +363,11 @@ def identify(req: IdentifyRequest):
         )
 
     try:
-        result = _parse_with_claude(raw_text, strict=False)
+        raw_result = _parse_with_claude(raw_text, strict=False)
     except (ClaudeParseError, KeyError, IndexError) as first_exc:
         logger.warning("Retrying Claude parse with strict prompt: %s", first_exc)
         try:
-            result = _parse_with_claude(raw_text, strict=True)
+            raw_result = _parse_with_claude(raw_text, strict=True)
         except (ClaudeParseError, KeyError, IndexError) as exc:
             logger.exception("Identify failed: Could not parse artwork data")
             detail = {
@@ -215,6 +381,17 @@ def identify(req: IdentifyRequest):
                 }
             raise HTTPException(status_code=422, detail=detail) from exc
 
+    if not isinstance(raw_result, dict):
+        logger.error("Identify failed: Claude output is not a JSON object (%s)", type(raw_result).__name__)
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": "Could not parse artwork data",
+                "reason": "Claude returned a non-object JSON payload.",
+            },
+        )
+
+    result = _normalize_analysis_result(raw_result)
     result["disclaimer"] = (
         "This is an AI-generated estimate for informational purposes only. "
         "Not a certified appraisal."
