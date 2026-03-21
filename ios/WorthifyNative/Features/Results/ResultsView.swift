@@ -20,11 +20,14 @@ struct ResultsView: View {
     }
 
     var body: some View {
-        ZStack {
-            AppBackdrop()
+        GeometryReader { proxy in
+            let contentWidth = max(proxy.size.width - 32, 0)
 
-            ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 22) {
+            ZStack {
+                AppBackdrop()
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
                         resultImage
 
                         VStack(alignment: .leading, spacing: 12) {
@@ -109,15 +112,13 @@ struct ResultsView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
+                    }
+                    .frame(width: contentWidth, alignment: .leading)
+                    .padding(.top, 8)
+                    .padding(.bottom, 120)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 120)
             }
-            .scrollBounceBehavior(.basedOnSize, axes: .vertical)
         }
-        .clipped()
         .navigationTitle("Result")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
