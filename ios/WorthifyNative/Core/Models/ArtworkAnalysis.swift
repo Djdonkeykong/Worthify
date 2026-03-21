@@ -1,6 +1,6 @@
 import Foundation
 
-struct ArtworkAnalysis: Codable, Identifiable, Equatable {
+struct ArtworkAnalysis: Codable, Identifiable, Equatable, Hashable {
     let id: UUID
     let identifiedArtist: String?
     let artworkTitle: String?
