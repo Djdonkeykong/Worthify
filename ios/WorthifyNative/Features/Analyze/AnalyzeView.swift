@@ -129,7 +129,7 @@ struct AnalyzeView: View {
             Color.black.opacity(0.78)
                 .ignoresSafeArea()
 
-            VStack(spacing: 14) {
+            VStack(spacing: 24) {
                 ProgressView()
                     .progressViewStyle(.circular)
                     .tint(.white)
@@ -154,10 +154,11 @@ struct AnalyzeView: View {
                     .scaledToFit()
                     .frame(maxWidth: .infinity)
                     .frame(height: imageDisplayHeight(for: size))
+                    .background(Color.black.opacity(0.10))
                     .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .stroke(Color.white.opacity(0.16), lineWidth: 1)
+                            .stroke(Color.black.opacity(0.22), lineWidth: 1.5)
                     }
                     .padding(.horizontal, 8)
             }

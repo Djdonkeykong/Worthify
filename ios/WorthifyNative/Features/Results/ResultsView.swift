@@ -23,9 +23,8 @@ struct ResultsView: View {
         ZStack {
             AppBackdrop()
 
-            GeometryReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 22) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
                         resultImage
 
                         VStack(alignment: .leading, spacing: 12) {
@@ -55,9 +54,10 @@ struct ResultsView: View {
                             }
 
                             VStack(alignment: .leading, spacing: 6) {
-                                descriptionStyledText
+                                Text(layoutSafeSummaryText)
                                     .font(.body)
                                     .lineLimit(5)
+                                    .foregroundStyle(AppTheme.ink)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .fixedSize(horizontal: false, vertical: true)
 
@@ -81,7 +81,7 @@ struct ResultsView: View {
                                 .font(.title2.weight(.bold))
 
                             ForEach(Array(detailRows.enumerated()), id: \.offset) { index, row in
-                                DetailRow(icon: row.icon, value: row.value)
+                                DetailRow(icon: row.icon, title: row.title, value: row.value)
 
                                 if index != detailRows.count - 1 {
                                     Divider()
@@ -109,11 +109,11 @@ struct ResultsView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-                    }
-                    .frame(width: max(proxy.size.width - 32, 0), alignment: .leading)
-                    .padding(.top, 8)
-                    .padding(.bottom, 120)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 120)
             }
         }
         .navigationTitle("Result")
@@ -130,7 +130,7 @@ struct ResultsView: View {
             .background(.ultraThinMaterial)
         }
         .sheet(isPresented: $showFullDescription) {
-            DescriptionSheet(text: layoutSafeDescriptionText)
+            DescriptionSheet(text: layoutSafeSummaryText)
                 .presentationDetents([.large])
                 .presentationDragIndicator(.hidden)
         }
@@ -201,7 +201,7 @@ struct ResultsView: View {
 
     private var displayTitleText: String {
         if isArtworkIdentified {
-            return result.titleText
+            return singleSentenceTitle(from: result.titleText)
         }
         return "Artwork not identified yet"
     }
@@ -232,138 +232,113 @@ struct ResultsView: View {
         return extractedPrice(from: value) ?? value
     }
 
-    private var descriptionText: String {
-        if !descriptionSections.isEmpty {
-            return descriptionSections
-                .map { "\($0.title): \($0.body)" }
-                .joined(separator: "\n\n")
-        }
-
-        if let summaryText = nonEmpty(result.summaryText) {
-            return summaryText
-        }
-
-        return "No additional details are available for this artwork."
-    }
-
     private var shouldShowMore: Bool {
-        descriptionText.count > 220
+        summaryText.count > 220
     }
 
-    private var layoutSafeDescriptionText: String {
-        addSoftWrapOpportunities(to: descriptionText)
+    private var layoutSafeSummaryText: String {
+        addSoftWrapOpportunities(to: summaryText)
     }
 
-    private var descriptionStyledText: Text {
-        guard !descriptionSections.isEmpty else {
-            return Text(layoutSafeDescriptionText).foregroundColor(AppTheme.ink)
-        }
-
-        var composed = Text("")
-        for (index, section) in descriptionSections.enumerated() {
-            if index > 0 {
-                composed = composed + Text("\n\n")
-            }
-
-            let label = layoutSafeInlineText(section.title)
-            let body = layoutSafeInlineText(section.body)
-            composed = composed
-                + Text("\(label): ")
-                    .foregroundColor(AppTheme.accentSecondary)
-                    .fontWeight(.semibold)
-                + Text(body)
-                    .foregroundColor(AppTheme.ink)
-        }
-        return composed
-    }
-
-    private var descriptionSections: [(title: String, body: String)] {
+    private var summaryText: String {
         if !isArtworkIdentified {
-            var sections: [(title: String, body: String)] = [
-                (
-                    "Detection",
-                    "we couldn't confidently identify this artwork from the current image."
-                ),
-                (
-                    "Next Steps",
-                    "try again with a straight-on photo that fills more of the frame, has good lighting, and minimizes glare from glass."
-                )
+            var snippets: [String] = [
+                "We couldn't confidently identify this artwork yet."
             ]
 
             if let artist = nonEmpty(result.identifiedArtist) {
-                sections.append(("Possible Artist", artist))
+                snippets.append("Possible artist match: \(artist).")
             }
 
-            return sections.map { (title: $0.title, body: sentenceCase($0.body)) }
+            if displayValue != "Value unavailable" {
+                snippets.append("Estimated value from available signals: \(displayValue).")
+            }
+
+            snippets.append("Try a straight-on photo with less glare and tighter framing.")
+            return snippets.joined(separator: " ")
         }
 
-        var sections: [(title: String, body: String)] = []
-
-        var artworkParts: [String] = []
+        var snippets: [String] = []
+        var coreTraits: [String] = []
         if let year = nonEmpty(result.yearEstimate) {
-            artworkParts.append("year estimate \(year)")
+            coreTraits.append("year estimate \(year)")
         }
         if let medium = nonEmpty(result.mediumGuess) {
-            artworkParts.append("medium \(medium)")
+            coreTraits.append("medium \(medium)")
         }
         if let style = nonEmpty(result.style) {
-            artworkParts.append("style \(style)")
+            coreTraits.append("style \(style)")
         }
         if let originality = nonEmpty(result.isOriginalOrPrint) {
-            artworkParts.append("\(originality.capitalized) format")
+            coreTraits.append("\(originality.capitalized) format")
         }
-        if !artworkParts.isEmpty {
-            sections.append(("Artwork Details", sentenceCase(artworkParts.joined(separator: ", "))))
-        }
-
-        if let artist = nonEmpty(result.identifiedArtist) {
-            sections.append(("Artist", sentenceCase(artist)))
+        if !coreTraits.isEmpty {
+            snippets.append("Key traits: \(sentenceCase(coreTraits.joined(separator: ", "))).")
         }
 
-        var marketParts: [String] = []
         if displayValue != "Value unavailable" {
-            marketParts.append("estimated value \(displayValue)")
-        }
-        if let reasoning = nonEmpty(result.valueReasoning) {
-            marketParts.append(reasoning)
-        }
-        if let comps = nonEmpty(result.comparableExamplesSummary) {
-            marketParts.append(comps)
-        }
-        if !marketParts.isEmpty {
-            sections.append(("Market Context", sentenceCase(marketParts.joined(separator: " "))))
+            snippets.append("Estimated value: \(displayValue).")
         }
 
-        return sections
+        if let reasoning = nonEmpty(result.valueReasoning) {
+            snippets.append(sentenceCase(firstSentence(in: reasoning, fallbackLimit: 160)))
+        } else if let comps = nonEmpty(result.comparableExamplesSummary) {
+            snippets.append(sentenceCase(firstSentence(in: comps, fallbackLimit: 160)))
+        }
+
+        if let summaryText = nonEmpty(result.summaryText), snippets.isEmpty {
+            return summaryText
+        }
+
+        if snippets.isEmpty {
+            return "No additional details are available for this artwork."
+        }
+        return snippets.joined(separator: " ")
     }
 
-    private var detailRows: [(icon: String, value: String)] {
-        var rows: [(icon: String, value: String)] = [
-            ("checkmark.seal", "Confidence: \(result.confidenceText)")
+    private var detailRows: [(icon: String, title: String, value: String)] {
+        var rows: [(icon: String, title: String, value: String)] = [
+            ("checkmark.seal", "Confidence", result.confidenceText)
         ]
 
+        if let artist = nonEmpty(result.identifiedArtist) {
+            rows.append(("person", "Artist", layoutSafeInlineText(artist)))
+        }
+
+        if displayValue != "Value unavailable" {
+            rows.append(("banknote", "Estimated value", displayValue))
+        }
+
         if let year = nonEmpty(result.yearEstimate) {
-            rows.append(("hourglass", layoutSafeInlineText(year)))
+            rows.append(("hourglass", "Year estimate", layoutSafeInlineText(year)))
         }
 
         if let medium = nonEmpty(result.mediumGuess) {
-            rows.append(("paintpalette", layoutSafeInlineText(medium)))
+            rows.append(("paintpalette", "Medium", layoutSafeInlineText(medium)))
         }
 
         if let style = nonEmpty(result.style) {
-            rows.append(("swatchpalette", layoutSafeInlineText(style)))
+            rows.append(("swatchpalette", "Style", layoutSafeInlineText(style)))
         }
 
         if let originality = nonEmpty(result.isOriginalOrPrint) {
-            rows.append(("doc.on.doc", layoutSafeInlineText(originality.capitalized)))
+            rows.append(("doc.on.doc", "Format", layoutSafeInlineText(originality.capitalized)))
+        }
+
+        if let reasoning = nonEmpty(result.valueReasoning) {
+            rows.append(("text.quote", "Value reasoning", layoutSafeInlineText(sentenceCase(reasoning))))
+        }
+
+        if let comps = nonEmpty(result.comparableExamplesSummary) {
+            rows.append(("list.bullet.rectangle.portrait", "Comparable examples", layoutSafeInlineText(sentenceCase(comps))))
+        }
+
+        if !isArtworkIdentified {
+            rows.append(("camera.viewfinder", "Retake tip", "Use a straight-on photo with less glare and tighter framing."))
         }
 
         if rows.count == 1 {
-            if displayValue != "Value unavailable" {
-                rows.append(("banknote", displayValue))
-            } else if !isArtworkIdentified {
-                rows.append(("camera.viewfinder", "Try another photo for a stronger match"))
-            }
+            rows.append(("info.circle", "Status", "Limited metadata available"))
         }
 
         return rows
@@ -375,10 +350,51 @@ struct ResultsView: View {
         return trimmed.isEmpty ? nil : trimmed
     }
 
+    private func singleSentenceTitle(from rawTitle: String) -> String {
+        let normalized = rawTitle
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\r", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !normalized.isEmpty else { return rawTitle }
+
+        if let range = normalized.range(of: #"[.!?]"#, options: .regularExpression) {
+            let sentence = String(normalized[..<range.upperBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+            return sentence.isEmpty ? normalized : sentence
+        }
+
+        // If there's no sentence punctuation, keep title concise.
+        if normalized.count > 90 {
+            return String(normalized.prefix(90)).trimmingCharacters(in: .whitespacesAndNewlines) + "..."
+        }
+
+        return normalized
+    }
+
     private func sentenceCase(_ text: String) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let first = trimmed.first else { return trimmed }
         return first.uppercased() + trimmed.dropFirst()
+    }
+
+    private func firstSentence(in text: String, fallbackLimit: Int) -> String {
+        let normalized = text
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\r", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !normalized.isEmpty else { return text }
+
+        if let range = normalized.range(of: #"[.!?]"#, options: .regularExpression) {
+            let sentence = String(normalized[..<range.upperBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+            return sentence.isEmpty ? normalized : sentence
+        }
+
+        if normalized.count > fallbackLimit {
+            return String(normalized.prefix(fallbackLimit)).trimmingCharacters(in: .whitespacesAndNewlines) + "..."
+        }
+
+        return normalized
     }
 
     private func layoutSafeInlineText(_ text: String) -> String {
@@ -452,6 +468,7 @@ struct ResultsView: View {
 
 private struct DetailRow: View {
     let icon: String
+    let title: String
     let value: String
 
     var body: some View {
@@ -461,12 +478,21 @@ private struct DetailRow: View {
                 .foregroundStyle(.primary)
                 .frame(width: 20)
 
-            Text(value)
-                .font(.body)
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text(value)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
