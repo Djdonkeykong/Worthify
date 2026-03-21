@@ -33,7 +33,7 @@ struct HomeView: View {
                     Image(systemName: "plus")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(AppTheme.primaryActionForeground)
-                        .frame(width: 88, height: 44)
+                        .frame(width: 88, height: 52)
                         .background(AppTheme.primaryActionBackground, in: Capsule())
                 }
                 .buttonStyle(.plain)
