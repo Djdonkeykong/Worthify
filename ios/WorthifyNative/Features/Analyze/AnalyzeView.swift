@@ -11,6 +11,18 @@ struct AnalyzeView: View {
     @State private var selectedImageData: Data?
     @State private var previewImage: Image?
 
+    init(prefilledImageData: Data? = nil) {
+        _selectedImageData = State(initialValue: prefilledImageData)
+        if
+            let prefilledImageData,
+            let uiImage = UIImage(data: prefilledImageData)
+        {
+            _previewImage = State(initialValue: Image(uiImage: uiImage))
+        } else {
+            _previewImage = State(initialValue: nil)
+        }
+    }
+
     var body: some View {
         WorthifyScreen {
             VStack(alignment: .leading, spacing: 16) {
@@ -96,6 +108,8 @@ struct AnalyzeView: View {
                 do {
                     if let data = try await newValue.loadTransferable(type: Data.self) {
                         selectedImageData = data
+                        result = nil
+                        errorMessage = nil
                         if let uiImage = UIImage(data: data) {
                             previewImage = Image(uiImage: uiImage)
                         }
