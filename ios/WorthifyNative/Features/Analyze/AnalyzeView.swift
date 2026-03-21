@@ -13,77 +13,77 @@ struct AnalyzeView: View {
 
     var body: some View {
         WorthifyScreen {
-            HeroPanel(
-                eyebrow: "Analyze",
-                title: "Analyze artwork",
-                subtitle: "Choose an image and run the estimate."
-            )
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Upload a photo of your artwork.")
+                    .font(.title2.weight(.semibold))
 
-            GlassCard {
-                SectionHeading("Selected image", subtitle: "A clear photo works best.")
+                Text("Choose a clear image, then run the estimate.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
 
-                if let previewImage {
-                    previewImage
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 240)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                } else {
-                    VStack(alignment: .leading, spacing: 12) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(Color(uiColor: .systemBackground))
-                                .frame(height: 200)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                        .frame(height: 280)
 
+                    if let previewImage {
+                        previewImage
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 280)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    } else {
+                        VStack(spacing: 8) {
                             Image(systemName: "photo.badge.plus")
-                                .font(.title)
+                                .font(.title2)
+                                .foregroundStyle(.secondary)
+                            Text("No image selected")
+                                .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
-
-                        Text("No image selected")
-                            .font(.headline)
-
-                        Text("Choose an artwork photo from your library to begin.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
                     }
                 }
 
                 PhotosPicker(selection: $selectedItem, matching: .images) {
-                    Label(selectedImageData == nil ? "Choose image" : "Change image", systemImage: "photo.fill.on.rectangle.fill")
+                    Label(
+                        selectedImageData == nil ? "Choose Image" : "Change Image",
+                        systemImage: "photo.fill.on.rectangle.fill"
+                    )
                 }
                 .buttonStyle(WorthifySecondaryButtonStyle())
-            }
 
-            if let result {
-                NavigationLink {
-                    ResultsView(result: result)
-                } label: {
-                    GlassCard {
-                        SectionHeading("Latest result", subtitle: "Open the most recent analysis.")
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(result.titleText)
-                                .font(.headline)
-                            Text(result.artistText)
-                                .foregroundStyle(.secondary)
-
-                            HStack(spacing: 8) {
-                                ConfidenceBadge(label: result.confidenceText)
-                                if let value = result.estimatedValueRange {
-                                    InsightChip(text: value, tint: AppTheme.accentSecondary)
-                                }
-                            }
-                        }
-                    }
+                if isRunning {
+                    ProgressView("Analyzing artwork...")
+                        .font(.subheadline.weight(.medium))
                 }
-                .buttonStyle(.plain)
-            }
 
-            if let errorMessage {
-                GlassCard {
-                    Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                Button(isRunning ? "Analyzing..." : "Run Analysis") {
+                    Task { await runAnalysis() }
+                }
+                .buttonStyle(WorthifyPrimaryButtonStyle())
+                .disabled(isRunning || selectedImageData == nil)
+
+                if let result {
+                    NavigationLink {
+                        ResultsView(result: result)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Text("Open Result")
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                        }
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.subheadline)
                         .foregroundStyle(.red)
                 }
             }
@@ -104,25 +104,6 @@ struct AnalyzeView: View {
                     errorMessage = error.localizedDescription
                 }
             }
-        }
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 12) {
-                if isRunning {
-                    ProgressView("Analyzing artwork...")
-                        .progressViewStyle(.circular)
-                        .font(.subheadline.weight(.medium))
-                }
-
-                Button(isRunning ? "Analyzing..." : "Run analysis") {
-                    Task { await runAnalysis() }
-                }
-                .buttonStyle(WorthifyPrimaryButtonStyle())
-                .disabled(isRunning || selectedImageData == nil)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            .padding(.bottom, 8)
-            .background(.ultraThinMaterial)
         }
     }
 

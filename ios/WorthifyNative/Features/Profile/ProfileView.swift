@@ -5,6 +5,8 @@ struct ProfileView: View {
     @State private var subscription = SubscriptionSnapshot.inactive
     @State private var profile: UserProfile?
     @State private var errorMessage: String?
+    @State private var automaticTimeZone = true
+    @State private var appearance = "System"
 
     private var isGuestMode: Bool {
         environment.config.bypassAuth && signedInSession == nil
@@ -18,101 +20,113 @@ struct ProfileView: View {
     }
 
     var body: some View {
-        WorthifyScreen {
-            HeroPanel(
-                eyebrow: "Profile",
-                title: profile?.fullName ?? (isGuestMode ? "Guest mode" : "Worthify account"),
-                subtitle: profile?.email ?? signedInSession?.email ?? currentSessionLabel
-            ) {
-                HStack(spacing: 10) {
-                    MetricPill(title: "Status", value: isGuestMode ? "Guest" : (subscription.isActive ? "Active" : "Free"))
-                    MetricPill(title: "Credits", value: "\(subscription.availableCredits)", tint: AppTheme.accentSecondary)
-                }
+        List {
+            Section("Account") {
+                LabeledContent("Name", value: displayName)
+                LabeledContent("Email", value: displayEmail)
+                LabeledContent("Status", value: isGuestMode ? "Guest" : "Signed in")
+                LabeledContent("Credits", value: "\(subscription.availableCredits)")
             }
 
-            GlassCard {
-                HStack(spacing: 16) {
-                    avatar
+            Section("Preferences") {
+                Picker("Appearance", selection: $appearance) {
+                    Text("System").tag("System")
+                    Text("Light").tag("Light")
+                    Text("Dark").tag("Dark")
+                }
+                Toggle("Automatic Time Zone", isOn: $automaticTimeZone)
+                settingsDisclosureRow("Dictation Language", value: "Auto-detect")
+            }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(profile?.fullName ?? (isGuestMode ? "Guest" : "Collector"))
-                            .font(.headline)
-
-                        Text(profile?.email ?? signedInSession?.email ?? currentSessionLabel)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-
-                        if let productIdentifier = subscription.productIdentifier {
-                            InsightChip(text: productIdentifier, tint: AppTheme.accent)
+            Section("Subscription") {
+                if subscription.isActive {
+                    settingsDisclosureRow("Manage Subscription", value: "Active")
+                } else {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("No Subscription Active")
+                            Text("Activate to unlock all features")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
                         }
+
+                        Spacer()
+
+                        Button("Upgrade") {}
+                            .buttonStyle(.borderedProminent)
+                            .tint(.yellow)
                     }
                 }
             }
 
-            GlassCard {
-                SectionHeading("Membership")
-
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    MetricPill(title: "Subscription", value: subscription.isActive ? "Active" : "Inactive")
-                    MetricPill(title: "Credits", value: "\(subscription.availableCredits)", tint: AppTheme.accentSecondary)
-                }
-
-                if let email = profile?.email {
-                    LabeledContent("Email", value: email)
+            Section("Support") {
+                settingsDisclosureRow("Give Feedback")
+                settingsDisclosureRow("About the App")
+                Button {
+                } label: {
+                    Text("Contact Support")
                 }
             }
 
-            GlassCard {
-                SectionHeading("Actions")
+            Section("Data") {
+                Button("Clear Local Cache", role: .destructive) {}
+                Button("Export Data") {}
+            }
 
+            Section("Account Actions") {
                 if isGuestMode {
-                    Text("Sign-in is temporarily bypassed for this build.")
+                    Text("Sign-in is currently bypassed for this build.")
                         .foregroundStyle(.secondary)
                 } else {
-                    Button("Sign out", role: .destructive) {
+                    Button("Sign Out", role: .destructive) {
                         Task {
                             await environment.sessionStore.signOut()
                             environment.router.rootRoute = .auth
                         }
                     }
-                    .buttonStyle(WorthifySecondaryButtonStyle())
                 }
             }
 
             if let errorMessage {
-                GlassCard {
-                    Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                Section("Error") {
+                    Text(errorMessage)
                         .foregroundStyle(.red)
                 }
             }
         }
-        .navigationTitle("Profile")
+        .listStyle(.insetGrouped)
+        .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
         .refreshable { await load() }
     }
 
-    private var avatar: some View {
-        ZStack {
-            Circle()
-                .fill(AppTheme.accent.opacity(0.14))
-                .frame(width: 72, height: 72)
-
-            Text(initials)
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(AppTheme.accent)
+    private func settingsDisclosureRow(_ title: String, value: String? = nil) -> some View {
+        HStack(spacing: 8) {
+            Text(title)
+            Spacer()
+            if let value {
+                Text(value)
+                    .foregroundStyle(.secondary)
+            }
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.tertiary)
         }
     }
 
-    private var initials: String {
-        let name = profile?.fullName?.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let name, !name.isEmpty {
-            return String(name.split(separator: " ").compactMap(\.first).prefix(2))
+    private var displayName: String {
+        if let fullName = profile?.fullName, !fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return fullName
         }
-        return "W"
+        return isGuestMode ? "Guest" : "Worthify User"
     }
 
-    private var currentSessionLabel: String {
+    private var displayEmail: String {
+        if let profileEmail = profile?.email, !profileEmail.isEmpty {
+            return profileEmail
+        }
+
         switch environment.sessionStore.state {
         case .restoring:
             return "Restoring session"

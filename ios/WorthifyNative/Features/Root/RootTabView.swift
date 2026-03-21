@@ -25,7 +25,7 @@ struct RootTabView: View {
                 ProfileView()
             }
             .tabItem {
-                Label("Profile", systemImage: "person")
+                Label("Settings", systemImage: "gearshape")
             }
             .tag(AppRouter.MainTab.profile)
         }
