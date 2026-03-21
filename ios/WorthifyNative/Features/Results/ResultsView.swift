@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 struct ResultsView: View {
     @EnvironmentObject private var environment: AppEnvironment
@@ -188,7 +189,11 @@ struct ResultsView: View {
     }
 
     private var displayValue: String {
-        nonEmpty(result.estimatedValueRange) ?? "Value unavailable"
+        guard let value = nonEmpty(result.estimatedValueRange) else {
+            return "Value unavailable"
+        }
+
+        return extractedPrice(from: value) ?? value
     }
 
     private var descriptionText: String {
@@ -252,6 +257,37 @@ struct ResultsView: View {
         guard let value else { return nil }
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private func extractedPrice(from value: String) -> String? {
+        let amountPattern = #"(?:[$€£¥]\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|\d[\d,]*(?:\.\d+)?\s*(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD))"#
+        let rangePattern = #"(?:[$€£¥]\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|\d[\d,]*(?:\.\d+)?\s*(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD))\s*(?:to|[-–—])\s*(?:[$€£¥]\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|\d[\d,]*(?:\.\d+)?\s*(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD))"#
+        let source = value as NSString
+        let fullRange = NSRange(location: 0, length: source.length)
+
+        if let rangeRegex = try? NSRegularExpression(pattern: rangePattern, options: [.caseInsensitive]),
+           let match = rangeRegex.firstMatch(in: value, options: [], range: fullRange) {
+            let matched = source.substring(with: match.range)
+            return cleanedAmount(matched)
+        }
+
+        if let amountRegex = try? NSRegularExpression(pattern: amountPattern, options: [.caseInsensitive]),
+           let match = amountRegex.firstMatch(in: value, options: [], range: fullRange) {
+            let matched = source.substring(with: match.range)
+            return cleanedAmount(matched)
+        }
+
+        return nil
+    }
+
+    private func cleanedAmount(_ value: String) -> String {
+        var cleaned = value.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+        cleaned = cleaned.replacingOccurrences(
+            of: #"([$€£¥])\s+(\d)"#,
+            with: "$1$2",
+            options: .regularExpression
+        )
+        return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

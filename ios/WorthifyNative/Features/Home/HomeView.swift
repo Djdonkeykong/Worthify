@@ -10,6 +10,7 @@ struct HomeView: View {
     @State private var selectedImageData: Data?
     @State private var pickerErrorMessage: String?
     @State private var latestSavedItem: SavedArtwork?
+    @State private var didSchedulePickerWarmup = false
 
     var body: some View {
         ZStack {
@@ -43,6 +44,9 @@ struct HomeView: View {
             .padding(.horizontal, 20)
         }
         .toolbar(.hidden, for: .navigationBar)
+        .onAppear {
+            schedulePhotoLibraryPickerWarmupIfNeeded()
+        }
         .task { await loadLatestArtwork() }
         .navigationDestination(isPresented: $navigateToAnalyze) {
             AnalyzeView(prefilledImageData: selectedImageData)
@@ -161,6 +165,16 @@ struct HomeView: View {
             latestSavedItem = (try await environment.collectionService.fetchRecentItems()).first
         } catch {
             latestSavedItem = nil
+        }
+    }
+
+    private func schedulePhotoLibraryPickerWarmupIfNeeded() {
+        guard !didSchedulePickerWarmup else { return }
+        didSchedulePickerWarmup = true
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            ImagePickerWarmup.prewarmPhotoLibraryPicker()
         }
     }
 }
@@ -289,5 +303,20 @@ private struct ImagePicker: UIViewControllerRepresentable {
                 }
             }
         }
+    }
+}
+
+private enum ImagePickerWarmup {
+    private static var didPrewarmPhotoLibraryPicker = false
+
+    @MainActor
+    static func prewarmPhotoLibraryPicker() {
+        guard !didPrewarmPhotoLibraryPicker else { return }
+        didPrewarmPhotoLibraryPicker = true
+        guard UIImagePickerController.isSourceTypeAvailable(.photoLibrary) else { return }
+
+        let picker = UIImagePickerController()
+        picker.sourceType = .photoLibrary
+        _ = picker.view
     }
 }

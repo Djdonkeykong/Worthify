@@ -6,6 +6,7 @@ POST /identify -> identifies artwork from an image URL using SearchAPI.io + Clau
 import json
 import logging
 import os
+import re
 import time
 
 import anthropic
@@ -48,9 +49,9 @@ Rules:
 - Use null for any field you cannot determine from the text or your own knowledge.
 - confidence_level must be one of: "low", "medium", "high"
 - is_original_or_print must be one of: "original", "print", "unknown"
-- estimated_value_range: use the specific price from the text if available. \
-If the text has no pricing, use YOUR OWN knowledge of this artist's market to provide a range \
-(e.g. "Artist's works typically: $500 - $3,000"). \
+- estimated_value_range: return ONLY the numeric price or price range (for example "$500 - $3,000"). \
+Do not include explanatory words, labels, or reasoning in this field. \
+If the text has no pricing, use YOUR OWN knowledge of this artist's market to provide a range. \
 For emerging/lesser-known artists, estimate based on comparable artists at a similar career stage. \
 Never return null for this field if the artist is identified.
 - value_reasoning: state clearly whether the range comes from the source text or your own art market knowledge.
@@ -70,7 +71,8 @@ value_reasoning, comparable_examples_summary
 
 confidence_level: "low" | "medium" | "high"
 is_original_or_print: "original" | "print" | "unknown"
-estimated_value_range: use text data if available, otherwise apply your own art market knowledge. \
+estimated_value_range: return ONLY a numeric price or price range string (for example "$500 - $3,000"). \
+No extra words or explanation. Use text data if available, otherwise apply your own art market knowledge. \
 Never null if artist is identified.
 value_reasoning: state whether range is from source text or your own knowledge.
 
@@ -86,6 +88,41 @@ class ClaudeParseError(Exception):
     def __init__(self, message: str, output_preview: str):
         super().__init__(message)
         self.output_preview = output_preview
+
+
+CURRENCY_CODES = (
+    "USD",
+    "EUR",
+    "GBP",
+    "NOK",
+    "SEK",
+    "DKK",
+    "CAD",
+    "AUD",
+    "CHF",
+    "JPY",
+    "CNY",
+    "HKD",
+    "SGD",
+    "NZD",
+)
+CURRENCY_SYMBOLS = "$€£¥"
+_CURRENCY_CODE_PATTERN = "|".join(CURRENCY_CODES)
+_NUMBER_PATTERN = r"(?:\d{1,3}(?:[,\s]\d{3})+|\d+)(?:\.\d+)?"
+_MAGNITUDE_PATTERN = r"(?:\s?(?:[kmb]\b|million\b|billion\b))?"
+_CURRENCY_AMOUNT_PATTERN = (
+    rf"(?:[{re.escape(CURRENCY_SYMBOLS)}]\s*{_NUMBER_PATTERN}{_MAGNITUDE_PATTERN}"
+    rf"|(?:{_CURRENCY_CODE_PATTERN})\s*{_NUMBER_PATTERN}{_MAGNITUDE_PATTERN}"
+    rf"|{_NUMBER_PATTERN}{_MAGNITUDE_PATTERN}\s*(?:{_CURRENCY_CODE_PATTERN}))"
+)
+_PRICE_RANGE_PATTERN = re.compile(
+    rf"({_CURRENCY_AMOUNT_PATTERN})\s*(?:to|[-–—])\s*({_CURRENCY_AMOUNT_PATTERN})",
+    re.IGNORECASE,
+)
+_PRICE_AMOUNT_PATTERN = re.compile(_CURRENCY_AMOUNT_PATTERN, re.IGNORECASE)
+_PLAIN_NUMERIC_RANGE_PATTERN = re.compile(
+    rf"({_NUMBER_PATTERN})\s*(?:to|[-–—])\s*({_NUMBER_PATTERN})"
+)
 
 
 def _truncate(text: str, limit: int = 500) -> str:
@@ -285,6 +322,47 @@ def _normalize_text_field(value: object) -> str | None:
     return str(value).strip() or None
 
 
+def _clean_price_amount(amount: str) -> str:
+    text = " ".join(amount.strip().split())
+    text = re.sub(r"([$€£¥])\s+(\d)", r"\1\2", text)
+    return text
+
+
+def _normalize_estimated_value_range(value: object) -> str | None:
+    text = _normalize_text_field(value)
+    if not text:
+        return None
+
+    range_match = _PRICE_RANGE_PATTERN.search(text)
+    if range_match:
+        lower = _clean_price_amount(range_match.group(1))
+        upper = _clean_price_amount(range_match.group(2))
+        return f"{lower} - {upper}"
+
+    amounts = []
+    for match in _PRICE_AMOUNT_PATTERN.finditer(text):
+        cleaned = _clean_price_amount(match.group(0))
+        if cleaned not in amounts:
+            amounts.append(cleaned)
+
+    if amounts:
+        has_range_signal = " to " in text.lower() or "-" in text or "–" in text or "—" in text
+        if len(amounts) >= 2 and has_range_signal:
+            return f"{amounts[0]} - {amounts[1]}"
+        return amounts[0]
+
+    plain_range = _PLAIN_NUMERIC_RANGE_PATTERN.search(text)
+    if plain_range and any(
+        keyword in text.lower()
+        for keyword in ("value", "worth", "price", "estimate", "estimated")
+    ):
+        lower = plain_range.group(1).replace(" ", "")
+        upper = plain_range.group(2).replace(" ", "")
+        return f"{lower} - {upper}"
+
+    return text
+
+
 def _normalize_confidence(value: object) -> str:
     normalized = (_normalize_text_field(value) or "").lower()
     if normalized in {"high", "medium", "low"}:
@@ -318,7 +396,9 @@ def _normalize_analysis_result(result: dict) -> dict:
             result.get("is_original_or_print")
         ),
         "confidence_level": _normalize_confidence(result.get("confidence_level")),
-        "estimated_value_range": _normalize_text_field(result.get("estimated_value_range")),
+        "estimated_value_range": _normalize_estimated_value_range(
+            result.get("estimated_value_range")
+        ),
         "value_reasoning": _normalize_text_field(result.get("value_reasoning")),
         "comparable_examples_summary": _normalize_text_field(
             result.get("comparable_examples_summary")
