@@ -48,7 +48,7 @@ struct AnalyzeView: View {
                     .overlay {
                         Text("Analyze")
                             .font(.headline.weight(.semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.black)
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
@@ -126,22 +126,19 @@ struct AnalyzeView: View {
 
     private var analysisOverlay: some View {
         ZStack {
-            Color.black.opacity(0.62)
+            Color.black.opacity(0.78)
                 .ignoresSafeArea()
 
             VStack(spacing: 14) {
                 ProgressView()
                     .progressViewStyle(.circular)
                     .tint(.white)
-                    .scaleEffect(1.2)
+                    .scaleEffect(1.9)
 
                 Text("Analyzing artwork...")
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.white)
             }
-            .padding(.horizontal, 28)
-            .padding(.vertical, 24)
-            .background(Color.black.opacity(0.22), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .transition(.opacity)
     }
@@ -157,8 +154,12 @@ struct AnalyzeView: View {
                     .scaledToFit()
                     .frame(maxWidth: .infinity)
                     .frame(height: imageDisplayHeight(for: size))
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .stroke(Color.white.opacity(0.16), lineWidth: 1)
+                    }
                     .padding(.horizontal, 8)
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.top, 68)

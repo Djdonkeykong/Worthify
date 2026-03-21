@@ -23,94 +23,97 @@ struct ResultsView: View {
         ZStack {
             AppBackdrop()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    resultImage
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        resultImage
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(displayTitleText)
-                            .font(.system(size: 40, weight: .bold, design: .rounded))
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.75)
-
-                        Text(displayValue)
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(AppTheme.accentSecondary)
-
-                        HStack(spacing: 10) {
-                            Circle()
-                                .fill(Color(uiColor: .tertiarySystemFill))
-                                .frame(width: 36, height: 36)
-                                .overlay {
-                                    Text(artistInitial)
-                                        .font(.subheadline.weight(.semibold))
-                                }
-
-                            Text(displayArtistText)
-                                .font(.title3.weight(.semibold))
-                        }
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(layoutSafeDescriptionText)
-                                .font(.body)
-                                .foregroundStyle(AppTheme.ink)
-                                .lineLimit(5)
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text(layoutSafeTitleText)
+                                .font(.system(size: 34, weight: .bold))
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.75)
+                                .multilineTextAlignment(.leading)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .fixedSize(horizontal: false, vertical: true)
 
-                            if shouldShowMore {
-                                Button("more") {
-                                    AppHaptics.mediumImpact()
-                                    showFullDescription = true
+                            Text(displayValue)
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(AppTheme.accentSecondary)
+
+                            HStack(spacing: 10) {
+                                Circle()
+                                    .fill(Color(uiColor: .tertiarySystemFill))
+                                    .frame(width: 36, height: 36)
+                                    .overlay {
+                                        Text(artistInitial)
+                                            .font(.subheadline.weight(.semibold))
+                                    }
+
+                                Text(layoutSafeArtistText)
+                                    .font(.title3.weight(.semibold))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
+                            VStack(alignment: .leading, spacing: 6) {
+                                descriptionStyledText
+                                    .font(.body)
+                                    .lineLimit(5)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .fixedSize(horizontal: false, vertical: true)
+
+                                if shouldShowMore {
+                                    Button("more") {
+                                        AppHaptics.mediumImpact()
+                                        showFullDescription = true
+                                    }
+                                    .font(.body.weight(.semibold))
+                                    .foregroundStyle(AppTheme.ink)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
                                 }
-                                .font(.body.weight(.semibold))
-                                .foregroundStyle(AppTheme.ink)
-                                .frame(maxWidth: .infinity, alignment: .trailing)
                             }
                         }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Divider()
+                        Divider()
 
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("Details")
-                            .font(.title2.weight(.bold))
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("Details")
+                                .font(.title2.weight(.bold))
 
-                        ForEach(Array(detailRows.enumerated()), id: \.offset) { index, row in
-                            DetailRow(icon: row.icon, value: row.value)
+                            ForEach(Array(detailRows.enumerated()), id: \.offset) { index, row in
+                                DetailRow(icon: row.icon, value: row.value)
 
-                            if index != detailRows.count - 1 {
-                                Divider()
-                                    .padding(.leading, 32)
+                                if index != detailRows.count - 1 {
+                                    Divider()
+                                        .padding(.leading, 32)
+                                }
                             }
-                        }
 
-                        Text(result.disclaimer)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 4)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-                    .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-                    if let saveMessage {
-                        GlassCard {
-                            Label(saveMessage, systemImage: saveMessage == "Saved." ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                                .foregroundStyle(saveMessage == "Saved." ? .green : .secondary)
-                        }
-                    } else if isGuestMode {
-                        GlassCard {
-                            Label("Guest mode is enabled. Saving to collection is disabled for now.", systemImage: "lock.slash")
+                            Text(result.disclaimer)
+                                .font(.footnote)
                                 .foregroundStyle(.secondary)
+                                .padding(.top, 4)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                        .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                        if let saveMessage {
+                            GlassCard {
+                                Label(saveMessage, systemImage: saveMessage == "Saved." ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                    .foregroundStyle(saveMessage == "Saved." ? .green : .secondary)
+                            }
+                        } else if isGuestMode {
+                            GlassCard {
+                                Label("Guest mode is enabled. Saving to collection is disabled for now.", systemImage: "lock.slash")
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
+                    .frame(width: max(proxy.size.width - 32, 0), alignment: .leading)
+                    .padding(.top, 8)
+                    .padding(.bottom, 120)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 120)
             }
         }
         .navigationTitle("Result")
@@ -213,6 +216,14 @@ struct ResultsView: View {
         return "No confident artist match yet"
     }
 
+    private var layoutSafeTitleText: String {
+        layoutSafeInlineText(displayTitleText)
+    }
+
+    private var layoutSafeArtistText: String {
+        layoutSafeInlineText(displayArtistText)
+    }
+
     private var displayValue: String {
         guard let value = nonEmpty(result.estimatedValueRange) else {
             return "Value unavailable"
@@ -222,18 +233,10 @@ struct ResultsView: View {
     }
 
     private var descriptionText: String {
-        if !isArtworkIdentified {
-            return unidentifiedDescriptionText
-        }
-
-        let blocks = [
-            artworkContextText,
-            artistContextText,
-            valuationContextText
-        ].compactMap { $0 }
-
-        if !blocks.isEmpty {
-            return blocks.joined(separator: "\n\n")
+        if !descriptionSections.isEmpty {
+            return descriptionSections
+                .map { "\($0.title): \($0.body)" }
+                .joined(separator: "\n\n")
         }
 
         if let summaryText = nonEmpty(result.summaryText) {
@@ -251,17 +254,87 @@ struct ResultsView: View {
         addSoftWrapOpportunities(to: descriptionText)
     }
 
-    private var unidentifiedDescriptionText: String {
-        var parts: [String] = [
-            "We couldn't confidently identify this artwork from the current image.",
-            "Try again with a straight-on photo that fills more of the frame, has good lighting, and minimizes glare from glass."
-        ]
-
-        if let artist = nonEmpty(result.identifiedArtist) {
-            parts.append("Possible artist match: \(artist).")
+    private var descriptionStyledText: Text {
+        guard !descriptionSections.isEmpty else {
+            return Text(layoutSafeDescriptionText).foregroundColor(AppTheme.ink)
         }
 
-        return parts.joined(separator: " ")
+        var composed = Text("")
+        for (index, section) in descriptionSections.enumerated() {
+            if index > 0 {
+                composed = composed + Text("\n\n")
+            }
+
+            let label = layoutSafeInlineText(section.title)
+            let body = layoutSafeInlineText(section.body)
+            composed = composed
+                + Text("\(label): ")
+                    .foregroundColor(AppTheme.accentSecondary)
+                    .fontWeight(.semibold)
+                + Text(body)
+                    .foregroundColor(AppTheme.ink)
+        }
+        return composed
+    }
+
+    private var descriptionSections: [(title: String, body: String)] {
+        if !isArtworkIdentified {
+            var sections: [(title: String, body: String)] = [
+                (
+                    "Detection",
+                    "we couldn't confidently identify this artwork from the current image."
+                ),
+                (
+                    "Next Steps",
+                    "try again with a straight-on photo that fills more of the frame, has good lighting, and minimizes glare from glass."
+                )
+            ]
+
+            if let artist = nonEmpty(result.identifiedArtist) {
+                sections.append(("Possible Artist", artist))
+            }
+
+            return sections.map { (title: $0.title, body: sentenceCase($0.body)) }
+        }
+
+        var sections: [(title: String, body: String)] = []
+
+        var artworkParts: [String] = []
+        if let year = nonEmpty(result.yearEstimate) {
+            artworkParts.append("year estimate \(year)")
+        }
+        if let medium = nonEmpty(result.mediumGuess) {
+            artworkParts.append("medium \(medium)")
+        }
+        if let style = nonEmpty(result.style) {
+            artworkParts.append("style \(style)")
+        }
+        if let originality = nonEmpty(result.isOriginalOrPrint) {
+            artworkParts.append("\(originality.capitalized) format")
+        }
+        if !artworkParts.isEmpty {
+            sections.append(("Artwork Details", sentenceCase(artworkParts.joined(separator: ", "))))
+        }
+
+        if let artist = nonEmpty(result.identifiedArtist) {
+            sections.append(("Artist", sentenceCase(artist)))
+        }
+
+        var marketParts: [String] = []
+        if displayValue != "Value unavailable" {
+            marketParts.append("estimated value \(displayValue)")
+        }
+        if let reasoning = nonEmpty(result.valueReasoning) {
+            marketParts.append(reasoning)
+        }
+        if let comps = nonEmpty(result.comparableExamplesSummary) {
+            marketParts.append(comps)
+        }
+        if !marketParts.isEmpty {
+            sections.append(("Market Context", sentenceCase(marketParts.joined(separator: " "))))
+        }
+
+        return sections
     }
 
     private var detailRows: [(icon: String, value: String)] {
@@ -270,19 +343,19 @@ struct ResultsView: View {
         ]
 
         if let year = nonEmpty(result.yearEstimate) {
-            rows.append(("hourglass", year))
+            rows.append(("hourglass", layoutSafeInlineText(year)))
         }
 
         if let medium = nonEmpty(result.mediumGuess) {
-            rows.append(("paintpalette", medium))
+            rows.append(("paintpalette", layoutSafeInlineText(medium)))
         }
 
         if let style = nonEmpty(result.style) {
-            rows.append(("swatchpalette", style))
+            rows.append(("swatchpalette", layoutSafeInlineText(style)))
         }
 
         if let originality = nonEmpty(result.isOriginalOrPrint) {
-            rows.append(("doc.on.doc", originality.capitalized))
+            rows.append(("doc.on.doc", layoutSafeInlineText(originality.capitalized)))
         }
 
         if rows.count == 1 {
@@ -296,58 +369,31 @@ struct ResultsView: View {
         return rows
     }
 
-    private var artworkContextText: String? {
-        var details: [String] = []
-
-        if let year = nonEmpty(result.yearEstimate) {
-            details.append("year estimate \(year)")
-        }
-        if let medium = nonEmpty(result.mediumGuess) {
-            details.append("medium \(medium)")
-        }
-        if let style = nonEmpty(result.style) {
-            details.append("style \(style)")
-        }
-        if let originality = nonEmpty(result.isOriginalOrPrint) {
-            details.append("\(originality.capitalized) format")
-        }
-
-        guard !details.isEmpty else { return nil }
-        return "Artwork details: \(details.joined(separator: ", "))."
-    }
-
-    private var artistContextText: String? {
-        let artist = result.artistText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !artist.isEmpty else { return nil }
-        return "Artist: \(artist)."
-    }
-
-    private var valuationContextText: String? {
-        var parts: [String] = []
-
-        if displayValue != "Value unavailable" {
-            parts.append("Estimated value: \(displayValue).")
-        }
-        if let reasoning = nonEmpty(result.valueReasoning) {
-            parts.append(reasoning)
-        }
-        if let comps = nonEmpty(result.comparableExamplesSummary) {
-            parts.append(comps)
-        }
-
-        guard !parts.isEmpty else { return nil }
-        return parts.joined(separator: " ")
-    }
-
     private func nonEmpty(_ value: String?) -> String? {
         guard let value else { return nil }
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
 
+    private func sentenceCase(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let first = trimmed.first else { return trimmed }
+        return first.uppercased() + trimmed.dropFirst()
+    }
+
+    private func layoutSafeInlineText(_ text: String) -> String {
+        let normalized = text
+            .replacingOccurrences(of: "\u{00A0}", with: " ")
+            .replacingOccurrences(of: "\u{200B}", with: "")
+            .replacingOccurrences(of: "\u{200C}", with: "")
+            .replacingOccurrences(of: "\u{200D}", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return addSoftWrapOpportunities(to: normalized)
+    }
+
     private func extractedPrice(from value: String) -> String? {
-        let amountPattern = #"(?:[$€£¥]\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|\d[\d,]*(?:\.\d+)?\s*(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD))"#
-        let rangePattern = #"(?:[$€£¥]\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|\d[\d,]*(?:\.\d+)?\s*(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD))\s*(?:to|[-–—])\s*(?:[$€£¥]\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|\d[\d,]*(?:\.\d+)?\s*(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD))"#
+        let amountPattern = #"(?:[$]\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|\d[\d,]*(?:\.\d+)?\s*(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD))"#
+        let rangePattern = #"(?:[$]\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|\d[\d,]*(?:\.\d+)?\s*(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD))\s*(?:to|-)\s*(?:[$]\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD)\s*\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB])?|\d[\d,]*(?:\.\d+)?\s*(?:USD|EUR|GBP|NOK|SEK|DKK|CAD|AUD|CHF|JPY|CNY|HKD|SGD|NZD))"#
         let source = value as NSString
         let fullRange = NSRange(location: 0, length: source.length)
 
@@ -369,7 +415,7 @@ struct ResultsView: View {
     private func cleanedAmount(_ value: String) -> String {
         var cleaned = value.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
         cleaned = cleaned.replacingOccurrences(
-            of: #"([$€£¥])\s+(\d)"#,
+            of: #"([$])\s+(\d)"#,
             with: "$1$2",
             options: .regularExpression
         )
@@ -418,7 +464,11 @@ private struct DetailRow: View {
             Text(value)
                 .font(.body)
                 .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
