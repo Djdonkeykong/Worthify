@@ -3,6 +3,7 @@ import SwiftUI
 import UIKit
 
 struct AnalyzeView: View {
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var environment: AppEnvironment
     @State private var isRunning = false
     @State private var result: ArtworkAnalysis?
@@ -24,83 +25,79 @@ struct AnalyzeView: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                AppBackdrop()
+        ZStack {
+            backgroundLayer
 
-                VStack(spacing: 14) {
-                    HStack(spacing: 12) {
-                        PhotosPicker(selection: $selectedItem, matching: .images) {
-                            Label(
-                                selectedImageData == nil ? "Choose Image" : "Change Image",
-                                systemImage: "photo.fill.on.rectangle.fill"
-                            )
-                        }
-                        .buttonStyle(WorthifySecondaryButtonStyle())
-
-                        Button("Run Analysis") {
-                            Task { await runAnalysis() }
-                        }
-                        .buttonStyle(WorthifyPrimaryButtonStyle())
-                        .disabled(isRunning || selectedImageData == nil)
+            VStack {
+                HStack {
+                    Button {
+                        AppHaptics.mediumImpact()
+                        dismiss()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 52, height: 52)
+                            .background(Color.black.opacity(0.42), in: Circle())
                     }
-                    .padding(.top, 8)
+                    .buttonStyle(.plain)
 
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(Color(uiColor: .secondarySystemGroupedBackground))
-
-                        if let previewImage {
-                            previewImage
-                                .resizable()
-                                .scaledToFill()
-                        } else {
-                            VStack(spacing: 10) {
-                                Image(systemName: "photo.badge.plus")
-                                    .font(.title2)
-                                    .foregroundStyle(.secondary)
-                                Text("No image selected")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: imageHeight(for: proxy.size))
-                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-
-                    if let result {
-                        NavigationLink {
-                            ResultsView(result: result)
-                        } label: {
-                            Text("Open Result")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    if let errorMessage {
-                        Text(errorMessage)
-                            .font(.subheadline)
-                            .foregroundStyle(.red)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
-                    Spacer(minLength: 0)
+                    Spacer()
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
 
-                if isRunning {
-                    analysisOverlay
+                Spacer()
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(Color.black.opacity(0.46), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 12)
                 }
+
+                HStack(spacing: 14) {
+                    PhotosPicker(selection: $selectedItem, matching: .images) {
+                        controlButton(
+                            symbol: "photo.on.rectangle.angled",
+                            isPrimary: false,
+                            isDisabled: false
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        Task { await runAnalysis() }
+                    } label: {
+                        controlButton(
+                            symbol: isRunning ? "hourglass" : "sparkles",
+                            isPrimary: true,
+                            isDisabled: isRunning || selectedImageData == nil
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isRunning || selectedImageData == nil)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
+            }
+
+            if isRunning {
+                analysisOverlay
             }
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
+        .navigationDestination(item: $result) { analysis in
+            ResultsView(result: analysis)
+        }
         .onChange(of: selectedItem) { _, newValue in
             guard let newValue else { return }
             Task {
@@ -118,11 +115,6 @@ struct AnalyzeView: View {
                 }
             }
         }
-    }
-
-    private func imageHeight(for size: CGSize) -> CGFloat {
-        let target = size.height * 0.64
-        return max(360, min(target, 620))
     }
 
     private var analysisOverlay: some View {
@@ -145,6 +137,44 @@ struct AnalyzeView: View {
             .background(Color.black.opacity(0.22), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .transition(.opacity)
+    }
+
+    @ViewBuilder
+    private var backgroundLayer: some View {
+        if let previewImage {
+            previewImage
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+        } else {
+            ZStack {
+                AppBackdrop()
+
+                VStack(spacing: 12) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 34, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    Text("Choose an artwork to begin")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .ignoresSafeArea()
+        }
+    }
+
+    private func controlButton(symbol: String, isPrimary: Bool, isDisabled: Bool) -> some View {
+        let backgroundColor = isPrimary ? AppTheme.primaryActionBackground : Color.black.opacity(0.40)
+        let foregroundColor = AppTheme.primaryActionForeground
+
+        return Image(systemName: symbol)
+            .font(.system(size: 22, weight: .semibold))
+            .foregroundStyle(isDisabled ? .white.opacity(0.5) : foregroundColor)
+            .frame(width: 72, height: 72)
+            .background(
+                (isDisabled ? Color.black.opacity(0.25) : backgroundColor),
+                in: Circle()
+            )
     }
 
     private func runAnalysis() async {

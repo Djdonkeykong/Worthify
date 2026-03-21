@@ -28,7 +28,7 @@ struct ResultsView: View {
 
                     VStack(alignment: .leading, spacing: 12) {
                         Text(result.titleText)
-                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                            .font(.system(size: 40, weight: .bold, design: .rounded))
                             .lineLimit(2)
                             .minimumScaleFactor(0.75)
 
@@ -108,7 +108,7 @@ struct ResultsView: View {
                 .padding(.bottom, 120)
             }
         }
-        .navigationTitle("")
+        .navigationTitle("Result")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             Button(isSaving ? "Saving..." : "Save to collection") {
@@ -118,7 +118,7 @@ struct ResultsView: View {
             .disabled(isSaving || result.sourceImageURL == nil || isGuestMode || signedInSession == nil)
             .padding(.horizontal, 20)
             .padding(.top, 10)
-            .padding(.bottom, 8)
+            .padding(.bottom, 20)
             .background(.ultraThinMaterial)
         }
         .sheet(isPresented: $showFullDescription) {
@@ -168,7 +168,7 @@ struct ResultsView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 300)
+        .frame(height: 340)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
