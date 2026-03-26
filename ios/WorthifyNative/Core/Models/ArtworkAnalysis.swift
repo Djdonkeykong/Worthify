@@ -133,8 +133,15 @@ struct SavedArtwork: Codable, Identifiable, Equatable {
     let imageURL: String
     let identifiedArtist: String?
     let artworkTitle: String?
+    let yearEstimate: String?
+    let style: String?
+    let mediumGuess: String?
+    let isOriginalOrPrint: String?
     let estimatedValueRange: String?
     let confidenceLevel: String?
+    let valueReasoning: String?
+    let comparableExamplesSummary: String?
+    let disclaimer: String?
     let createdAt: Date
 
     enum CodingKeys: String, CodingKey {
@@ -143,8 +150,15 @@ struct SavedArtwork: Codable, Identifiable, Equatable {
         case imageURL = "image_url"
         case identifiedArtist = "identified_artist"
         case artworkTitle = "artwork_title"
+        case yearEstimate = "year_estimate"
+        case style
+        case mediumGuess = "medium_guess"
+        case isOriginalOrPrint = "is_original_or_print"
         case estimatedValueRange = "estimated_value_range"
         case confidenceLevel = "confidence_level"
+        case valueReasoning = "value_reasoning"
+        case comparableExamplesSummary = "comparable_examples_summary"
+        case disclaimer
         case createdAt = "created_at"
     }
 
@@ -166,6 +180,23 @@ struct SavedArtwork: Codable, Identifiable, Equatable {
 
     var confidenceText: String? {
         confidenceLevel?.nilIfEmpty?.capitalized
+    }
+
+    var asArtworkAnalysis: ArtworkAnalysis {
+        ArtworkAnalysis(
+            identifiedArtist: identifiedArtist,
+            artworkTitle: artworkTitle,
+            yearEstimate: yearEstimate,
+            style: style,
+            mediumGuess: mediumGuess,
+            isOriginalOrPrint: isOriginalOrPrint,
+            confidenceLevel: confidenceLevel?.nilIfEmpty ?? "unknown",
+            estimatedValueRange: estimatedValueRange,
+            valueReasoning: valueReasoning,
+            comparableExamplesSummary: comparableExamplesSummary,
+            disclaimer: disclaimer?.nilIfEmpty ?? "Saved analysis.",
+            sourceImageURL: remoteImageURL
+        )
     }
 }
 

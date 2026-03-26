@@ -280,7 +280,7 @@ final class SupabaseCollectionService: CollectionServicing {
     func fetchRecentItems() async throws -> [SavedArtwork] {
         let session = try await authService.validSession()
         let url = config.restBaseURL.appendingPathComponent("artwork_identifications").appending(queryItems: [
-            URLQueryItem(name: "select", value: "id,user_id,image_url,identified_artist,artwork_title,estimated_value_range,confidence_level,created_at"),
+            URLQueryItem(name: "select", value: "id,user_id,image_url,identified_artist,artwork_title,year_estimate,style,medium_guess,is_original_or_print,estimated_value_range,confidence_level,value_reasoning,comparable_examples_summary,disclaimer,created_at"),
             URLQueryItem(name: "user_id", value: "eq.\(session.userID)"),
             URLQueryItem(name: "order", value: "created_at.desc"),
             URLQueryItem(name: "limit", value: "50")
@@ -291,6 +291,10 @@ final class SupabaseCollectionService: CollectionServicing {
 
     func saveAnalysis(_ analysis: ArtworkAnalysis, sourceImageURL: URL) async throws {
         let session = try await authService.validSession()
+        if try await isAlreadySaved(sourceImageURL.absoluteString, session: session) {
+            throw AppError.message("Already saved.")
+        }
+
         let url = config.restBaseURL.appendingPathComponent("artwork_identifications")
         let body = SaveArtworkRequest(
             userID: session.userID,
@@ -310,6 +314,17 @@ final class SupabaseCollectionService: CollectionServicing {
         )
 
         _ = try await send(url: url, method: "POST", session: session, body: body, responseType: EmptyResponse.self, preferRepresentation: "return=minimal")
+    }
+
+    private func isAlreadySaved(_ imageURL: String, session: AppSession) async throws -> Bool {
+        let url = config.restBaseURL.appendingPathComponent("artwork_identifications").appending(queryItems: [
+            URLQueryItem(name: "select", value: "id"),
+            URLQueryItem(name: "user_id", value: "eq.\(session.userID)"),
+            URLQueryItem(name: "image_url", value: "eq.\(imageURL)"),
+            URLQueryItem(name: "limit", value: "1")
+        ])
+        let matches = try await fetchArray(url: url, session: session, type: SavedArtworkExistence.self)
+        return !matches.isEmpty
     }
 
     private func fetchArray<Response: Decodable>(url: URL, session: AppSession, type: Response.Type) async throws -> [Response] {
@@ -386,6 +401,10 @@ actor LocalCollectionStore {
     func save(_ item: SavedArtwork) {
         items.insert(item, at: 0)
     }
+
+    func exists(imageURL: String) -> Bool {
+        items.contains { $0.imageURL == imageURL }
+    }
 }
 
 final class LocalCollectionService: CollectionServicing {
@@ -405,14 +424,26 @@ final class LocalCollectionService: CollectionServicing {
     }
 
     func saveAnalysis(_ analysis: ArtworkAnalysis, sourceImageURL: URL) async throws {
+        let absoluteURL = sourceImageURL.absoluteString
+        if await store.exists(imageURL: absoluteURL) {
+            throw AppError.message("Already saved.")
+        }
+
         let item = SavedArtwork(
             id: UUID(),
             userID: localUserID,
-            imageURL: sourceImageURL.absoluteString,
+            imageURL: absoluteURL,
             identifiedArtist: analysis.identifiedArtist,
             artworkTitle: analysis.artworkTitle,
+            yearEstimate: analysis.yearEstimate,
+            style: analysis.style,
+            mediumGuess: analysis.mediumGuess,
+            isOriginalOrPrint: analysis.isOriginalOrPrint,
             estimatedValueRange: analysis.estimatedValueRange,
             confidenceLevel: analysis.confidenceLevel,
+            valueReasoning: analysis.valueReasoning,
+            comparableExamplesSummary: analysis.comparableExamplesSummary,
+            disclaimer: analysis.disclaimer,
             createdAt: Date()
         )
         await store.save(item)
@@ -598,6 +629,10 @@ private struct SaveArtworkRequest: Encodable {
         case disclaimer
         case isSaved = "is_saved"
     }
+}
+
+private struct SavedArtworkExistence: Decodable {
+    let id: UUID
 }
 
 private struct CloudinaryUploadResponse: Decodable {

@@ -2,14 +2,12 @@ import SwiftUI
 import UIKit
 
 struct HomeView: View {
-    @EnvironmentObject private var environment: AppEnvironment
     @State private var showSourceSheet = false
     @State private var showPhotoLibraryPicker = false
     @State private var showCameraPicker = false
     @State private var navigateToAnalyze = false
     @State private var selectedImageData: Data?
     @State private var pickerErrorMessage: String?
-    @State private var latestSavedItem: SavedArtwork?
     @State private var didSchedulePickerWarmup = false
 
     var body: some View {
@@ -47,7 +45,6 @@ struct HomeView: View {
         .onAppear {
             schedulePhotoLibraryPickerWarmupIfNeeded()
         }
-        .task { await loadLatestArtwork() }
         .navigationDestination(isPresented: $navigateToAnalyze) {
             AnalyzeView(prefilledImageData: selectedImageData)
         }
@@ -85,24 +82,7 @@ struct HomeView: View {
 
     @ViewBuilder
     private var previewArtwork: some View {
-        if let imageURL = latestSavedItem?.remoteImageURL {
-            AsyncImage(url: imageURL) { phase in
-                switch phase {
-                case let .success(image):
-                    image
-                        .resizable()
-                        .scaledToFit()
-                case .failure:
-                    placeholderArtwork
-                case .empty:
-                    placeholderArtwork
-                @unknown default:
-                    placeholderArtwork
-                }
-            }
-        } else {
-            placeholderArtwork
-        }
+        placeholderArtwork
     }
 
     private var placeholderArtwork: some View {
@@ -141,30 +121,6 @@ struct HomeView: View {
         selectedImageData = imageData
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             navigateToAnalyze = true
-        }
-    }
-
-    private var requiresSignIn: Bool {
-        !environment.config.bypassAuth && signedInSession == nil
-    }
-
-    private var signedInSession: AppSession? {
-        if case let .signedIn(session) = environment.sessionStore.state {
-            return session
-        }
-        return nil
-    }
-
-    private func loadLatestArtwork() async {
-        guard !requiresSignIn else {
-            latestSavedItem = nil
-            return
-        }
-
-        do {
-            latestSavedItem = (try await environment.collectionService.fetchRecentItems()).first
-        } catch {
-            latestSavedItem = nil
         }
     }
 

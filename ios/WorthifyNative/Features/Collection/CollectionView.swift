@@ -18,14 +18,6 @@ struct CollectionView: View {
 
     var body: some View {
         List {
-            if environment.config.bypassAuth {
-                Section {
-                    Text("Local mode: saved items are available until the app is closed.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
             if requiresSignIn {
                 Section("Collection") {
                     Text("Sign in to view saved items.")
@@ -39,17 +31,28 @@ struct CollectionView: View {
             } else {
                 Section("Collection") {
                     ForEach(items) { item in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(item.titleText)
-                                .font(.body.weight(.semibold))
-                            Text(item.subtitleText)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            Text(item.createdDateText)
-                                .font(.footnote)
-                                .foregroundStyle(.tertiary)
+                        NavigationLink {
+                            ResultsView(result: item.asArtworkAnalysis)
+                        } label: {
+                            HStack(spacing: 12) {
+                                ArtworkThumbnail(url: item.remoteImageURL)
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(item.titleText)
+                                        .font(.body.weight(.semibold))
+                                        .lineLimit(2)
+                                    Text(item.subtitleText)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                    Text(item.createdDateText)
+                                        .font(.footnote)
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
                     }
                 }
             }
@@ -80,6 +83,41 @@ struct CollectionView: View {
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+}
+
+private struct ArtworkThumbnail: View {
+    let url: URL?
+
+    var body: some View {
+        Group {
+            if let url {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case let .success(image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .failure, .empty:
+                        placeholder
+                    @unknown default:
+                        placeholder
+                    }
+                }
+            } else {
+                placeholder
+            }
+        }
+        .frame(width: 64, height: 64)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var placeholder: some View {
+        ZStack {
+            Color(uiColor: .tertiarySystemFill)
+            Image(systemName: "photo")
+                .foregroundStyle(.secondary)
         }
     }
 }
