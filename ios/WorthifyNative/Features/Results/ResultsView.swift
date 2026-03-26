@@ -21,40 +21,42 @@ struct ResultsView: View {
     }
 
     var body: some View {
-        ZStack {
-            AppBackdrop()
+        GeometryReader { proxy in
+            ZStack {
+                AppBackdrop()
 
-            ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 22) {
-                    ImageCard(url: result.sourceImageURL, height: 340)
+                ScrollView(.vertical) {
+                    VStack(alignment: .leading, spacing: 22) {
+                        ImageCard(url: result.sourceImageURL, height: 340)
 
-                    summarySection
+                        summarySection
 
-                    Divider()
+                        Divider()
 
-                    detailsSection
+                        detailsSection
 
-                    if let saveMessage {
-                        GlassCard {
-                            Label(
-                                saveMessage,
-                                systemImage: isPositiveSaveMessage(saveMessage) ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
-                            )
-                            .foregroundStyle(isPositiveSaveMessage(saveMessage) ? .green : .secondary)
-                        }
-                    } else if requiresSignIn {
-                        GlassCard {
-                            Label("Sign in to save this result to your collection.", systemImage: "lock.slash")
-                                .foregroundStyle(.secondary)
+                        if let saveMessage {
+                            GlassCard {
+                                Label(
+                                    saveMessage,
+                                    systemImage: isPositiveSaveMessage(saveMessage) ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+                                )
+                                .foregroundStyle(isPositiveSaveMessage(saveMessage) ? .green : .secondary)
+                            }
+                        } else if requiresSignIn {
+                            GlassCard {
+                                Label("Sign in to save this result to your collection.", systemImage: "lock.slash")
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
+                    .frame(width: max(proxy.size.width - 32, 0), alignment: .leading)
+                    .padding(.top, 8)
+                    .padding(.bottom, 120)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 120)
+                .frame(maxWidth: .infinity)
+                .scrollBounceBehavior(.basedOnSize, axes: .vertical)
             }
-            .scrollBounceBehavior(.basedOnSize, axes: .vertical)
         }
         .navigationTitle("Result")
         .navigationBarTitleDisplayMode(.inline)
@@ -78,18 +80,12 @@ struct ResultsView: View {
 
     private var summarySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 10) {
-                Text(displayTitleText)
-                    .font(.system(size: 34, weight: .bold))
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.75)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .layoutPriority(1)
-
-                ConfidenceBadge(label: confidenceBadgeLabel)
-                    .padding(.top, 6)
-            }
+            Text(displayTitleText)
+                .font(.system(size: 34, weight: .bold))
+                .lineLimit(2)
+                .minimumScaleFactor(0.75)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(displayValueText)
                 .font(.title3.weight(.semibold))
@@ -214,10 +210,6 @@ struct ResultsView: View {
 
     private var displayValueText: String {
         cleanedInlineText(result.estimatedValueRange) ?? "Value unavailable"
-    }
-
-    private var confidenceBadgeLabel: String {
-        cleanedInlineText(result.confidenceText) ?? "Unknown"
     }
 
     private var fullSummaryText: String {
