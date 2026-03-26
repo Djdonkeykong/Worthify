@@ -21,40 +21,42 @@ struct ResultsView: View {
     }
 
     var body: some View {
-        ZStack {
-            AppBackdrop()
+        GeometryReader { proxy in
+            ZStack {
+                AppBackdrop()
 
-            ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 22) {
-                    ImageCard(url: result.sourceImageURL, height: 340)
+                ScrollView(.vertical) {
+                    VStack(alignment: .leading, spacing: 22) {
+                        ImageCard(url: result.sourceImageURL, height: 340)
 
-                    summarySection
+                        summarySection
 
-                    Divider()
+                        Divider()
 
-                    detailsSection
+                        detailsSection
 
-                    if let saveMessage {
-                        GlassCard {
-                            Label(
-                                saveMessage,
-                                systemImage: isPositiveSaveMessage(saveMessage) ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
-                            )
-                            .foregroundStyle(isPositiveSaveMessage(saveMessage) ? .green : .secondary)
-                        }
-                    } else if requiresSignIn {
-                        GlassCard {
-                            Label("Sign in to save this result to your collection.", systemImage: "lock.slash")
-                                .foregroundStyle(.secondary)
+                        if let saveMessage {
+                            GlassCard {
+                                Label(
+                                    saveMessage,
+                                    systemImage: isPositiveSaveMessage(saveMessage) ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+                                )
+                                .foregroundStyle(isPositiveSaveMessage(saveMessage) ? .green : .secondary)
+                            }
+                        } else if requiresSignIn {
+                            GlassCard {
+                                Label("Sign in to save this result to your collection.", systemImage: "lock.slash")
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
+                    .frame(width: max(proxy.size.width - 32, 0), alignment: .leading)
+                    .padding(.top, 8)
+                    .padding(.bottom, 120)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 8)
-                .padding(.bottom, 120)
+                .frame(maxWidth: .infinity)
+                .scrollBounceBehavior(.basedOnSize, axes: .vertical)
             }
-            .contentMargins(.horizontal, 16, for: .scrollContent)
-            .scrollBounceBehavior(.basedOnSize, axes: .vertical)
         }
         .navigationTitle("Result")
         .navigationBarTitleDisplayMode(.inline)
@@ -239,7 +241,7 @@ struct ResultsView: View {
             traits.append("Format: \(format.capitalized)")
         }
         if !traits.isEmpty {
-            parts.append(traits.joined(separator: " • "))
+            parts.append(traits.joined(separator: " | "))
         }
 
         if let value = cleanedInlineText(result.estimatedValueRange) {
@@ -319,7 +321,11 @@ struct ResultsView: View {
             .filter { !$0.isEmpty }
             .joined(separator: " ")
 
-        return normalized.isEmpty ? nil : normalized
+        if normalized.isEmpty {
+            return nil
+        }
+
+        return softWrapLongTokens(in: normalized)
     }
 
     private func cleanedBlockText(_ value: String?) -> String? {
@@ -340,9 +346,10 @@ struct ResultsView: View {
         let lines = normalized
             .split(separator: "\n", omittingEmptySubsequences: false)
             .map { rawLine in
-                rawLine
+                let compactLine = rawLine
                     .split(whereSeparator: \.isWhitespace)
                     .joined(separator: " ")
+                return softWrapLongTokens(in: compactLine)
             }
             .joined(separator: "\n")
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -357,6 +364,22 @@ struct ResultsView: View {
     private var isSaveCompleted: Bool {
         guard let saveMessage else { return false }
         return isPositiveSaveMessage(saveMessage)
+    }
+
+    private func softWrapLongTokens(in text: String, chunkSize: Int = 20) -> String {
+        let softBreak = "\u{200B}"
+        return text
+            .split(separator: " ", omittingEmptySubsequences: false)
+            .map { token in
+                let raw = String(token)
+                guard raw.count > chunkSize else { return raw }
+                return stride(from: 0, to: raw.count, by: chunkSize).map { index in
+                    let start = raw.index(raw.startIndex, offsetBy: index)
+                    let end = raw.index(start, offsetBy: min(chunkSize, raw.count - index))
+                    return String(raw[start..<end])
+                }.joined(separator: softBreak)
+            }
+            .joined(separator: " ")
     }
 }
 
