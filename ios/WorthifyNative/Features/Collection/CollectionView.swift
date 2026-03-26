@@ -5,8 +5,8 @@ struct CollectionView: View {
     @State private var items: [SavedArtwork] = []
     @State private var errorMessage: String?
 
-    private var isGuestMode: Bool {
-        environment.config.bypassAuth && signedInSession == nil
+    private var requiresSignIn: Bool {
+        !environment.config.bypassAuth && signedInSession == nil
     }
 
     private var signedInSession: AppSession? {
@@ -18,7 +18,15 @@ struct CollectionView: View {
 
     var body: some View {
         List {
-            if isGuestMode {
+            if environment.config.bypassAuth {
+                Section {
+                    Text("Local mode: saved items are available until the app is closed.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if requiresSignIn {
                 Section("Collection") {
                     Text("Sign in to view saved items.")
                         .foregroundStyle(.secondary)
@@ -61,7 +69,7 @@ struct CollectionView: View {
     }
 
     private func load() async {
-        if isGuestMode {
+        if requiresSignIn {
             items = []
             errorMessage = nil
             return

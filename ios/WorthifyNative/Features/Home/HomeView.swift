@@ -144,8 +144,8 @@ struct HomeView: View {
         }
     }
 
-    private var isGuestMode: Bool {
-        environment.config.bypassAuth && signedInSession == nil
+    private var requiresSignIn: Bool {
+        !environment.config.bypassAuth && signedInSession == nil
     }
 
     private var signedInSession: AppSession? {
@@ -156,7 +156,7 @@ struct HomeView: View {
     }
 
     private func loadLatestArtwork() async {
-        guard !isGuestMode else {
+        guard !requiresSignIn else {
             latestSavedItem = nil
             return
         }

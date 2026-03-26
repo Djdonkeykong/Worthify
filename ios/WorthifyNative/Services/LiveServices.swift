@@ -376,6 +376,61 @@ final class SupabaseFavoritesService: FavoritesServicing {
     }
 }
 
+actor LocalCollectionStore {
+    private var items: [SavedArtwork] = []
+
+    func recentItems() -> [SavedArtwork] {
+        items.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    func save(_ item: SavedArtwork) {
+        items.insert(item, at: 0)
+    }
+}
+
+final class LocalCollectionService: CollectionServicing {
+    private let store: LocalCollectionStore
+    private let localUserID: String
+
+    init(
+        store: LocalCollectionStore = LocalCollectionStore(),
+        localUserID: String = "local-device"
+    ) {
+        self.store = store
+        self.localUserID = localUserID
+    }
+
+    func fetchRecentItems() async throws -> [SavedArtwork] {
+        await store.recentItems()
+    }
+
+    func saveAnalysis(_ analysis: ArtworkAnalysis, sourceImageURL: URL) async throws {
+        let item = SavedArtwork(
+            id: UUID(),
+            userID: localUserID,
+            imageURL: sourceImageURL.absoluteString,
+            identifiedArtist: analysis.identifiedArtist,
+            artworkTitle: analysis.artworkTitle,
+            estimatedValueRange: analysis.estimatedValueRange,
+            confidenceLevel: analysis.confidenceLevel,
+            createdAt: Date()
+        )
+        await store.save(item)
+    }
+}
+
+final class LocalFavoritesService: FavoritesServicing {
+    private let collectionService: CollectionServicing
+
+    init(collectionService: CollectionServicing) {
+        self.collectionService = collectionService
+    }
+
+    func fetchFavorites() async throws -> [SavedArtwork] {
+        try await collectionService.fetchRecentItems()
+    }
+}
+
 final class SupabaseSubscriptionService: SubscriptionServicing {
     private let config: AppConfig
     private let authService: AuthServicing

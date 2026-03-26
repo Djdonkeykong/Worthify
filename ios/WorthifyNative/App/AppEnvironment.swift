@@ -62,8 +62,17 @@ final class AppEnvironment: ObservableObject {
         let authService = SupabaseAuthService(config: config)
         let uploadService = CloudinaryImageUploadService(config: config)
         let detectionService = ArtworkDetectionService(config: config)
-        let collectionService = SupabaseCollectionService(config: config, authService: authService)
-        let favoritesService = SupabaseFavoritesService(config: config, authService: authService)
+        let collectionService: CollectionServicing
+        let favoritesService: FavoritesServicing
+        if config.bypassAuth {
+            let localCollectionService = LocalCollectionService()
+            collectionService = localCollectionService
+            favoritesService = LocalFavoritesService(collectionService: localCollectionService)
+        } else {
+            let supabaseCollectionService = SupabaseCollectionService(config: config, authService: authService)
+            collectionService = supabaseCollectionService
+            favoritesService = SupabaseFavoritesService(config: config, authService: authService)
+        }
         let subscriptionService = SupabaseSubscriptionService(config: config, authService: authService)
         let notificationService = NativeNotificationService()
         let shareBridge = AppGroupShareBridge(config: config)

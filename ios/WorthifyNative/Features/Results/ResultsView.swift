@@ -8,8 +8,12 @@ struct ResultsView: View {
     @State private var isSaving = false
     @State private var showFullDescription = false
 
-    private var isGuestMode: Bool {
-        environment.config.bypassAuth && signedInSession == nil
+    private var isLocalCollectionMode: Bool {
+        environment.config.bypassAuth
+    }
+
+    private var requiresSignIn: Bool {
+        !environment.config.bypassAuth && signedInSession == nil
     }
 
     private var signedInSession: AppSession? {
@@ -103,9 +107,14 @@ struct ResultsView: View {
                             Label(saveMessage, systemImage: saveMessage == "Saved." ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                                 .foregroundStyle(saveMessage == "Saved." ? .green : .secondary)
                         }
-                    } else if isGuestMode {
+                    } else if isLocalCollectionMode {
                         GlassCard {
-                            Label("Guest mode is enabled. Saving to collection is disabled for now.", systemImage: "lock.slash")
+                            Label("Local mode: saved items remain available until the app is closed.", systemImage: "iphone")
+                                .foregroundStyle(.secondary)
+                        }
+                    } else if requiresSignIn {
+                        GlassCard {
+                            Label("Sign in to save this result to your collection.", systemImage: "lock.slash")
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -124,7 +133,7 @@ struct ResultsView: View {
                 Task { await saveResult() }
             }
             .buttonStyle(WorthifyPrimaryButtonStyle())
-            .disabled(isSaving || result.sourceImageURL == nil || isGuestMode || signedInSession == nil)
+            .disabled(isSaving || result.sourceImageURL == nil || requiresSignIn)
             .padding(.horizontal, 20)
             .padding(.top, 10)
             .padding(.bottom, 20)
