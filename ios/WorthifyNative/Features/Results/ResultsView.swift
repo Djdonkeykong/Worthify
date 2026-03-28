@@ -21,7 +21,7 @@ struct ResultsView: View {
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             AppBackdrop()
 
             ScrollView(.vertical) {
@@ -50,32 +50,33 @@ struct ResultsView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 120)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .contentMargins(.horizontal, 16, for: .scrollContent)
-            .contentMargins(.horizontal, 0, for: .scrollIndicators)
-            .scrollBounceBehavior(.basedOnSize, axes: .vertical)
+
+            saveBar
         }
         .navigationTitle("Result")
         .navigationBarTitleDisplayMode(.inline)
-        .safeAreaInset(edge: .bottom) {
-            Button(saveButtonTitle) {
-                Task { await saveResult() }
-            }
-            .buttonStyle(WorthifyPrimaryButtonStyle())
-            .disabled(!canSave)
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            .padding(.bottom, 20)
-            .background(.ultraThinMaterial)
-        }
         .sheet(isPresented: $showFullDescription) {
             DescriptionSheet(text: fullSummaryText)
                 .presentationDetents([.large])
                 .presentationDragIndicator(.hidden)
         }
+    }
+
+    private var saveBar: some View {
+        Button(saveButtonTitle) {
+            Task { await saveResult() }
+        }
+        .buttonStyle(WorthifyPrimaryButtonStyle())
+        .disabled(!canSave)
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .padding(.bottom, 20)
+        .background(.ultraThinMaterial)
     }
 
     private var summarySection: some View {
@@ -210,8 +211,13 @@ struct ResultsView: View {
         return String(first).uppercased()
     }
 
+    private var localizedEstimatedValueText: String? {
+        let formattedValue = EstimatedValueFormatter.displayText(from: result.estimatedValueRange)
+        return cleanedInlineText(formattedValue ?? result.estimatedValueRange)
+    }
+
     private var displayValueText: String {
-        cleanedInlineText(result.estimatedValueRange) ?? "Value unavailable"
+        localizedEstimatedValueText ?? "Value unavailable"
     }
 
     private var fullSummaryText: String {
@@ -220,7 +226,7 @@ struct ResultsView: View {
             if let candidate = cleanedInlineText(result.identifiedArtist) {
                 parts.append("Possible artist match: \(candidate).")
             }
-            if let value = cleanedInlineText(result.estimatedValueRange) {
+            if let value = localizedEstimatedValueText {
                 parts.append("Estimated value from available signals: \(value).")
             }
             parts.append("Try a straight-on photo with less glare and tighter framing.")
@@ -246,7 +252,7 @@ struct ResultsView: View {
             parts.append(traits.joined(separator: " | "))
         }
 
-        if let value = cleanedInlineText(result.estimatedValueRange) {
+        if let value = localizedEstimatedValueText {
             parts.append("Estimated value: \(value).")
         }
         if let reasoning = cleanedBlockText(result.valueReasoning) {
@@ -277,7 +283,7 @@ struct ResultsView: View {
         if let artist = cleanedInlineText(result.identifiedArtist) {
             rows.append(("person", "Artist", artist))
         }
-        if let value = cleanedInlineText(result.estimatedValueRange) {
+        if let value = localizedEstimatedValueText {
             rows.append(("banknote", "Estimated value", value))
         }
         if let year = cleanedInlineText(result.yearEstimate) {

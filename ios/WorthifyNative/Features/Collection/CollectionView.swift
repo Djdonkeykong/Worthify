@@ -49,7 +49,7 @@ struct CollectionView: View {
                                     Text(item.titleText)
                                         .font(.body.weight(.semibold))
                                         .lineLimit(2)
-                                    Text(item.subtitleText)
+                                    Text(subtitleText(for: item))
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(1)
@@ -101,62 +101,88 @@ struct CollectionView: View {
             errorMessage = error.localizedDescription
         }
     }
+
+    private func subtitleText(for item: SavedArtwork) -> String {
+        if let artist = item.identifiedArtist?.trimmingCharacters(in: .whitespacesAndNewlines), !artist.isEmpty {
+            return artist
+        }
+
+        if let localizedValue = EstimatedValueFormatter.displayText(from: item.estimatedValueRange) {
+            return localizedValue
+        }
+
+        return "Saved analysis"
+    }
 }
 
 private struct CollectionValueBanner: View {
     let summary: CollectionValueSummary
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Potential Collection Value")
-                .font(.caption.weight(.semibold))
+        HStack(spacing: 12) {
+            Text("Collection value")
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
+
+            Spacer(minLength: 12)
 
             Text(summary.totalEstimateText)
-                .font(.title3.weight(.bold))
+                .font(.subheadline.weight(.bold))
                 .foregroundStyle(.primary)
-
-            Text(summary.coverageText)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(.vertical, 12)
+        .background(Color(uiColor: .secondarySystemGroupedBackground), in: Capsule())
         .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            Capsule()
                 .stroke(Color.black.opacity(0.06), lineWidth: 1)
         }
-        .shadow(color: Color.black.opacity(0.08), radius: 12, y: 4)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, y: 3)
     }
 }
 
 struct CollectionValueSummary {
     let estimatedLowerBound: Double
     let estimatedUpperBound: Double
+    let currencyCode: String?
     let valuedItemCount: Int
     let totalItemCount: Int
+    let hasMixedCurrencies: Bool
 
     init(items: [SavedArtwork]) {
         var lowerBound = 0.0
         var upperBound = 0.0
+        var summaryCurrencyCode: String?
+        var mixedCurrencies = false
         var matchedCount = 0
 
         for item in items {
-            guard let bounds = Self.parseValueBounds(from: item.estimatedValueRange) else {
+            guard let bounds = EstimatedValueFormatter.parse(item.estimatedValueRange) else {
                 continue
             }
 
             lowerBound += bounds.lowerBound
             upperBound += bounds.upperBound
             matchedCount += 1
+
+            if let boundsCurrencyCode = bounds.currencyCode {
+                if let summaryCurrencyCode, summaryCurrencyCode != boundsCurrencyCode {
+                    mixedCurrencies = true
+                } else {
+                    summaryCurrencyCode = boundsCurrencyCode
+                }
+            }
         }
 
         estimatedLowerBound = lowerBound
         estimatedUpperBound = upperBound
+        currencyCode = summaryCurrencyCode
         valuedItemCount = matchedCount
         totalItemCount = items.count
+        hasMixedCurrencies = mixedCurrencies
     }
 
     var totalEstimateText: String {
@@ -164,14 +190,17 @@ struct CollectionValueSummary {
             return "No collection estimate yet"
         }
 
-        let lower = Self.currencyFormatter.string(from: NSNumber(value: estimatedLowerBound)) ?? "$0"
-        let upper = Self.currencyFormatter.string(from: NSNumber(value: estimatedUpperBound)) ?? "$0"
-
-        if abs(estimatedUpperBound - estimatedLowerBound) < 0.5 {
-            return lower
+        if hasMixedCurrencies {
+            return "Mixed currencies"
         }
 
-        return "\(lower) - \(upper)"
+        let range = EstimatedValueRange(
+            lowerBound: estimatedLowerBound,
+            upperBound: estimatedUpperBound,
+            currencyCode: currencyCode
+        )
+
+        return EstimatedValueFormatter.format(range) ?? "No collection estimate yet"
     }
 
     var coverageText: String {
@@ -188,47 +217,6 @@ struct CollectionValueSummary {
         }
 
         return "Based on \(valuedItemCount) of \(totalItemCount) saved artworks with value estimates."
-    }
-
-    private static let currencyFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.maximumFractionDigits = 0
-        return formatter
-    }()
-
-    private static func parseValueBounds(from text: String?) -> ClosedRange<Double>? {
-        guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
-            return nil
-        }
-
-        let normalized = text
-            .replacingOccurrences(of: "\u{00A0}", with: " ")
-            .replacingOccurrences(of: "\u{2013}", with: "-")
-            .replacingOccurrences(of: "\u{2014}", with: "-")
-
-        let pattern = #"(\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?)"#
-        guard let expression = try? NSRegularExpression(pattern: pattern) else {
-            return nil
-        }
-
-        let range = NSRange(normalized.startIndex..<normalized.endIndex, in: normalized)
-        let values = expression.matches(in: normalized, range: range).compactMap { match -> Double? in
-            guard let valueRange = Range(match.range(at: 1), in: normalized) else {
-                return nil
-            }
-            return Double(normalized[valueRange].replacingOccurrences(of: ",", with: ""))
-        }
-
-        guard let first = values.first else {
-            return nil
-        }
-
-        guard let last = values.last else {
-            return first...first
-        }
-
-        return min(first, last)...max(first, last)
     }
 }
 
