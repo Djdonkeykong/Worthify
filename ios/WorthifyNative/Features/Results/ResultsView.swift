@@ -22,50 +22,64 @@ struct ResultsView: View {
     }
 
     var body: some View {
-        ZStack {
-            AppBackdrop()
+        GeometryReader { proxy in
+            ZStack {
+                AppBackdrop()
 
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 0) {
-                    StretchyHeaderImage(url: result.sourceImageURL, baseHeight: headerHeight)
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        StretchyHeaderImage(
+                            url: result.sourceImageURL,
+                            baseHeight: headerHeight + proxy.safeAreaInsets.top
+                        )
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Details")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .textCase(.uppercase)
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Details")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .textCase(.uppercase)
 
-                        GlassCard(padding: 0) {
-                            VStack(spacing: 0) {
-                                ForEach(Array(detailItems.enumerated()), id: \.offset) { index, item in
-                                    detailItemView(item)
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, item.verticalPadding)
+                            GlassCard(padding: 0) {
+                                VStack(spacing: 0) {
+                                    ForEach(Array(detailItems.enumerated()), id: \.offset) { index, item in
+                                        detailItemView(item)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, item.verticalPadding)
 
-                                    if index != detailItems.count - 1 {
-                                        Divider()
-                                            .padding(.leading, 16)
+                                        if index != detailItems.count - 1 {
+                                            Divider()
+                                                .padding(.leading, 16)
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        if let disclaimer = cleanedBlockText(result.disclaimer) {
-                            Text(disclaimer)
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                            if let disclaimer = cleanedBlockText(result.disclaimer) {
+                                Text(disclaimer)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 18)
+                        .padding(.bottom, 32)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 18)
-                    .padding(.bottom, 32)
                 }
+                .coordinateSpace(name: "results-scroll")
+                .ignoresSafeArea(edges: .top)
             }
-            .coordinateSpace(name: "results-scroll")
         }
         .navigationTitle("Details")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                ShareLink(item: shareText, subject: Text(displayTitleText)) {
+                    Image(systemName: "square.and.arrow.up")
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -111,6 +125,13 @@ struct ResultsView: View {
             }
             .buttonStyle(WorthifyPrimaryButtonStyle())
             .disabled(!canSave)
+
+            NavigationLink {
+                AnalyzeView()
+            } label: {
+                Text("Analyze another photo")
+            }
+            .buttonStyle(WorthifySecondaryButtonStyle())
 
             Text(saveStatusText)
                 .font(.footnote)
@@ -190,6 +211,29 @@ struct ResultsView: View {
             return .green
         }
         return .secondary
+    }
+
+    private var shareText: String {
+        var lines = ["Worthify artwork result"]
+        lines.append("Title: \(displayTitleText)")
+        lines.append("Artist: \(displayArtistText)")
+        lines.append("Confidence: \(result.confidenceText)")
+
+        if let value = localizedEstimatedValueText {
+            lines.append("Estimated value: \(value)")
+        }
+        if let medium = cleanedInlineText(result.mediumGuess) {
+            lines.append("Medium: \(medium)")
+        }
+        if let style = cleanedInlineText(result.style) {
+            lines.append("Style: \(style)")
+        }
+        if let reasoning = cleanedBlockText(result.valueReasoning) {
+            lines.append("")
+            lines.append("Reasoning: \(reasoning)")
+        }
+
+        return lines.joined(separator: "\n")
     }
 
     private func saveResult() async {
@@ -345,6 +389,14 @@ private struct StretchyHeaderImage: View {
                         endPoint: .bottom
                     )
                     .frame(height: 88)
+                }
+                .overlay(alignment: .top) {
+                    LinearGradient(
+                        colors: [Color.black.opacity(0.16), Color.clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 140)
                 }
         }
         .frame(height: baseHeight)

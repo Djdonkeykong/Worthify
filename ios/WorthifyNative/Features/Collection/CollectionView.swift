@@ -4,13 +4,40 @@ struct CollectionView: View {
     @EnvironmentObject private var environment: AppEnvironment
     @State private var items: [SavedArtwork] = []
     @State private var errorMessage: String?
+    @State private var searchText = ""
+    @State private var sortOption: CollectionSortOption = .newest
+    @State private var confidenceFilter: CollectionConfidenceFilter = .all
 
     private var collectionValueSummary: CollectionValueSummary {
         CollectionValueSummary(items: items)
     }
 
-    private var shouldShowCollectionValueBanner: Bool {
-        !requiresSignIn && !items.isEmpty
+    private var filteredItems: [SavedArtwork] {
+        let normalizedQuery = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        let matchingItems = items.filter { item in
+            let matchesQuery: Bool
+            if normalizedQuery.isEmpty {
+                matchesQuery = true
+            } else {
+                let haystacks = [
+                    item.artworkTitle ?? "",
+                    item.identifiedArtist ?? "",
+                    item.estimatedValueRange ?? ""
+                ].map { $0.lowercased() }
+
+                matchesQuery = haystacks.contains { $0.contains(normalizedQuery) }
+            }
+
+            let matchesConfidence = confidenceFilter.matches(item)
+            return matchesQuery && matchesConfidence
+        }
+
+        return sortOption.sorted(using: matchingItems)
+    }
+
+    private var hasActiveFilters: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || confidenceFilter != .all
     }
 
     private var requiresSignIn: Bool {
@@ -26,6 +53,18 @@ struct CollectionView: View {
 
     var body: some View {
         List {
+            if !requiresSignIn && !items.isEmpty {
+                Section {
+                    CollectionInsightsCard(
+                        summary: collectionValueSummary,
+                        visibleItemCount: filteredItems.count,
+                        sortOptionTitle: sortOption.title,
+                        hasActiveFilters: hasActiveFilters
+                    )
+                }
+                .listRowBackground(Color.clear)
+            }
+
             if requiresSignIn {
                 Section("Collection") {
                     Text("Sign in to view saved items.")
@@ -36,9 +75,14 @@ struct CollectionView: View {
                     Text("No saved artworks yet.")
                         .foregroundStyle(.secondary)
                 }
+            } else if filteredItems.isEmpty {
+                Section("Collection") {
+                    Text("No artworks match your current search or filters.")
+                        .foregroundStyle(.secondary)
+                }
             } else {
                 Section("Collection") {
-                    ForEach(items) { item in
+                    ForEach(filteredItems) { item in
                         NavigationLink {
                             ResultsView(result: item.asArtworkAnalysis)
                         } label: {
@@ -53,9 +97,15 @@ struct CollectionView: View {
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(1)
-                                    Text(item.createdDateText)
-                                        .font(.footnote)
-                                        .foregroundStyle(.tertiary)
+                                    HStack(spacing: 8) {
+                                        Text(item.createdDateText)
+                                            .font(.footnote)
+                                            .foregroundStyle(.tertiary)
+
+                                        if let confidence = item.confidenceText {
+                                            ConfidenceBadge(label: confidence)
+                                        }
+                                    }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -75,12 +125,31 @@ struct CollectionView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("Collection")
         .navigationBarTitleDisplayMode(.inline)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if shouldShowCollectionValueBanner {
-                CollectionValueBanner(summary: collectionValueSummary)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                    .padding(.bottom, 8)
+        .searchable(text: $searchText, prompt: "Search artist, title, or value")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Picker("Sort", selection: $sortOption) {
+                        ForEach(CollectionSortOption.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+
+                    Picker("Confidence", selection: $confidenceFilter) {
+                        ForEach(CollectionConfidenceFilter.allCases) { filter in
+                            Text(filter.title).tag(filter)
+                        }
+                    }
+
+                    if hasActiveFilters {
+                        Button("Clear Filters") {
+                            searchText = ""
+                            confidenceFilter = .all
+                        }
+                    }
+                } label: {
+                    Image(systemName: hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                }
             }
         }
         .task { await load() }
@@ -115,32 +184,153 @@ struct CollectionView: View {
     }
 }
 
-private struct CollectionValueBanner: View {
+private struct CollectionInsightsCard: View {
     let summary: CollectionValueSummary
+    let visibleItemCount: Int
+    let sortOptionTitle: String
+    let hasActiveFilters: Bool
+
+    private let columns = [
+        GridItem(.flexible(), spacing: 10),
+        GridItem(.flexible(), spacing: 10)
+    ]
 
     var body: some View {
-        HStack(spacing: 12) {
-            Text("Collection value")
-                .font(.footnote.weight(.semibold))
+        GlassCard {
+            SectionHeading("Collection Snapshot", subtitle: summary.coverageText)
+
+            LazyVGrid(columns: columns, spacing: 10) {
+                MetricPill(title: "Collection value", value: summary.totalEstimateText)
+                MetricPill(title: "Saved works", value: "\(summary.totalItemCount)")
+                MetricPill(title: "Valued works", value: "\(summary.valuedItemCount)")
+                MetricPill(title: "Avg confidence", value: summary.averageConfidenceText)
+            }
+
+            HStack {
+                Text(hasActiveFilters ? "Showing \(visibleItemCount) of \(summary.totalItemCount)" : "Showing all \(summary.totalItemCount)")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                Spacer(minLength: 12)
+
+                Text("Sorted by \(sortOptionTitle)")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+private struct ArtworkThumbnail: View {
+    let url: URL?
+
+    var body: some View {
+        Group {
+            if let url {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case let .success(image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .failure, .empty:
+                        placeholder
+                    @unknown default:
+                        placeholder
+                    }
+                }
+            } else {
+                placeholder
+            }
+        }
+        .frame(width: 64, height: 64)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var placeholder: some View {
+        ZStack {
+            Color(uiColor: .tertiarySystemFill)
+            Image(systemName: "photo")
                 .foregroundStyle(.secondary)
-
-            Spacer(minLength: 12)
-
-            Text(summary.totalEstimateText)
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(Color(uiColor: .secondarySystemGroupedBackground), in: Capsule())
-        .overlay {
-            Capsule()
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+    }
+}
+
+private enum CollectionSortOption: String, CaseIterable, Identifiable {
+    case newest
+    case oldest
+    case highestValue
+    case lowestValue
+    case artistAZ
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .newest:
+            return "Newest"
+        case .oldest:
+            return "Oldest"
+        case .highestValue:
+            return "Highest Value"
+        case .lowestValue:
+            return "Lowest Value"
+        case .artistAZ:
+            return "Artist A-Z"
         }
-        .shadow(color: Color.black.opacity(0.05), radius: 10, y: 3)
+    }
+
+    func sorted(using items: [SavedArtwork]) -> [SavedArtwork] {
+        switch self {
+        case .newest:
+            return items.sorted { $0.createdAt > $1.createdAt }
+        case .oldest:
+            return items.sorted { $0.createdAt < $1.createdAt }
+        case .highestValue:
+            return items.sorted { valueScore(for: $0) > valueScore(for: $1) }
+        case .lowestValue:
+            return items.sorted { valueScore(for: $0) < valueScore(for: $1) }
+        case .artistAZ:
+            return items.sorted { normalizedArtist(for: $0) < normalizedArtist(for: $1) }
+        }
+    }
+
+    private func valueScore(for item: SavedArtwork) -> Double {
+        guard let bounds = EstimatedValueFormatter.parse(item.estimatedValueRange) else {
+            return self == .lowestValue ? .greatestFiniteMagnitude : -.greatestFiniteMagnitude
+        }
+        return (bounds.lowerBound + bounds.upperBound) / 2
+    }
+
+    private func normalizedArtist(for item: SavedArtwork) -> String {
+        (item.identifiedArtist ?? item.artworkTitle ?? "").lowercased()
+    }
+}
+
+private enum CollectionConfidenceFilter: String, CaseIterable, Identifiable {
+    case all
+    case high
+    case medium
+    case low
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all:
+            return "All Confidence"
+        case .high:
+            return "High Confidence"
+        case .medium:
+            return "Medium Confidence"
+        case .low:
+            return "Low Confidence"
+        }
+    }
+
+    func matches(_ item: SavedArtwork) -> Bool {
+        guard self != .all else { return true }
+        return item.confidenceLevel?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == rawValue
     }
 }
 
@@ -151,6 +341,8 @@ struct CollectionValueSummary {
     let valuedItemCount: Int
     let totalItemCount: Int
     let hasMixedCurrencies: Bool
+    let confidenceSampleCount: Int
+    let confidenceScoreTotal: Double
 
     init(items: [SavedArtwork]) {
         var lowerBound = 0.0
@@ -158,22 +350,27 @@ struct CollectionValueSummary {
         var summaryCurrencyCode: String?
         var mixedCurrencies = false
         var matchedCount = 0
+        var confidenceCount = 0
+        var confidenceTotal = 0.0
 
         for item in items {
-            guard let bounds = EstimatedValueFormatter.parse(item.estimatedValueRange) else {
-                continue
+            if let bounds = EstimatedValueFormatter.parse(item.estimatedValueRange) {
+                lowerBound += bounds.lowerBound
+                upperBound += bounds.upperBound
+                matchedCount += 1
+
+                if let boundsCurrencyCode = bounds.currencyCode {
+                    if let summaryCurrencyCode, summaryCurrencyCode != boundsCurrencyCode {
+                        mixedCurrencies = true
+                    } else {
+                        summaryCurrencyCode = boundsCurrencyCode
+                    }
+                }
             }
 
-            lowerBound += bounds.lowerBound
-            upperBound += bounds.upperBound
-            matchedCount += 1
-
-            if let boundsCurrencyCode = bounds.currencyCode {
-                if let summaryCurrencyCode, summaryCurrencyCode != boundsCurrencyCode {
-                    mixedCurrencies = true
-                } else {
-                    summaryCurrencyCode = boundsCurrencyCode
-                }
+            if let score = confidenceScore(for: item.confidenceLevel) {
+                confidenceCount += 1
+                confidenceTotal += score
             }
         }
 
@@ -183,6 +380,8 @@ struct CollectionValueSummary {
         valuedItemCount = matchedCount
         totalItemCount = items.count
         hasMixedCurrencies = mixedCurrencies
+        confidenceSampleCount = confidenceCount
+        confidenceScoreTotal = confidenceTotal
     }
 
     var totalEstimateText: String {
@@ -218,39 +417,33 @@ struct CollectionValueSummary {
 
         return "Based on \(valuedItemCount) of \(totalItemCount) saved artworks with value estimates."
     }
-}
 
-private struct ArtworkThumbnail: View {
-    let url: URL?
-
-    var body: some View {
-        Group {
-            if let url {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case let .success(image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    case .failure, .empty:
-                        placeholder
-                    @unknown default:
-                        placeholder
-                    }
-                }
-            } else {
-                placeholder
-            }
+    var averageConfidenceText: String {
+        guard confidenceSampleCount > 0 else {
+            return "Unknown"
         }
-        .frame(width: 64, height: 64)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+        let average = confidenceScoreTotal / Double(confidenceSampleCount)
+        switch average {
+        case 2.5...:
+            return "High"
+        case 1.5..<2.5:
+            return "Medium"
+        default:
+            return "Low"
+        }
     }
 
-    private var placeholder: some View {
-        ZStack {
-            Color(uiColor: .tertiarySystemFill)
-            Image(systemName: "photo")
-                .foregroundStyle(.secondary)
+    private func confidenceScore(for rawValue: String?) -> Double? {
+        switch rawValue?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "high":
+            return 3
+        case "medium":
+            return 2
+        case "low":
+            return 1
+        default:
+            return nil
         }
     }
 }

@@ -11,6 +11,8 @@ struct AnalyzeView: View {
     @State private var selectedImageData: Data?
     @State private var previewImage: Image?
 
+    private let headerHeight: CGFloat = 360
+
     init(prefilledImageData: Data? = nil) {
         _selectedImageData = State(initialValue: prefilledImageData)
         if
@@ -26,48 +28,75 @@ struct AnalyzeView: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                backgroundLayer(size: proxy.size)
+                AppBackdrop()
 
-                VStack {
-                    Spacer()
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        StretchyPreviewHeader(
+                            image: previewImage,
+                            baseHeight: headerHeight + proxy.safeAreaInsets.top
+                        )
 
-                    if let errorMessage {
-                        Text(errorMessage)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
-                            .background(Color.black.opacity(0.46), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 12)
-                    }
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Analyze")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .textCase(.uppercase)
 
-                    HStack(spacing: 14) {
-                        PhotosPicker(selection: $selectedItem, matching: .images) {
-                            controlButton(
-                                symbol: "photo.on.rectangle.angled",
-                                isPrimary: false,
-                                isDisabled: false
-                            )
+                            GlassCard {
+                                SectionHeading(
+                                    previewImage == nil ? "Choose a photo" : "Ready to analyze",
+                                    subtitle: previewImage == nil
+                                        ? "Upload an artwork image to begin."
+                                        : "Review the image, then run the analysis when it looks right."
+                                )
+
+                                VStack(alignment: .leading, spacing: 8) {
+                                    guidanceRow(systemImage: "viewfinder", text: "Shoot straight-on and fill the frame with the artwork.")
+                                    guidanceRow(systemImage: "sun.max", text: "Avoid glare, shadows, and reflective glass when possible.")
+                                    guidanceRow(systemImage: "signature", text: "If the result is weak, retake details like signatures or labels.")
+                                }
+
+                                if let errorMessage {
+                                    Text(errorMessage)
+                                        .font(.footnote.weight(.medium))
+                                        .foregroundStyle(.red)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+
+                                HStack(spacing: 12) {
+                                    PhotosPicker(selection: $selectedItem, matching: .images) {
+                                        actionTile(
+                                            title: previewImage == nil ? "Upload photo" : "Change photo",
+                                            systemImage: "photo.on.rectangle.angled",
+                                            isPrimary: false,
+                                            isDisabled: false
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Button {
+                                        Task { await runAnalysis() }
+                                    } label: {
+                                        actionTile(
+                                            title: isRunning ? "Analyzing" : "Analyze",
+                                            systemImage: isRunning ? "hourglass" : "magnifyingglass",
+                                            isPrimary: true,
+                                            isDisabled: isRunning || selectedImageData == nil
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                    .disabled(isRunning || selectedImageData == nil)
+                                }
+                            }
                         }
-                        .buttonStyle(.plain)
-
-                        Button {
-                            Task { await runAnalysis() }
-                        } label: {
-                            controlButton(
-                                symbol: isRunning ? "hourglass" : "magnifyingglass",
-                                isPrimary: true,
-                                isDisabled: isRunning || selectedImageData == nil
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(isRunning || selectedImageData == nil)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 18)
+                        .padding(.bottom, 32)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 24)
                 }
+                .coordinateSpace(name: "analyze-scroll")
+                .ignoresSafeArea(edges: .top)
 
                 if isRunning {
                     analysisOverlay
@@ -76,6 +105,7 @@ struct AnalyzeView: View {
         }
         .navigationTitle("Analyze")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .navigationDestination(item: $result) { analysis in
             ResultsView(result: analysis)
         }
@@ -98,6 +128,45 @@ struct AnalyzeView: View {
         }
     }
 
+    private func guidanceRow(systemImage: String, text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 18, alignment: .center)
+
+            Text(text)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func actionTile(title: String, systemImage: String, isPrimary: Bool, isDisabled: Bool) -> some View {
+        let backgroundColor = isPrimary
+            ? AppTheme.primaryActionBackground
+            : Color(uiColor: .tertiarySystemFill)
+        let foregroundColor = isPrimary
+            ? AppTheme.primaryActionForeground
+            : AppTheme.secondaryActionForeground
+
+        return VStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.system(size: 20, weight: .semibold))
+
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .multilineTextAlignment(.center)
+        }
+        .foregroundStyle(isDisabled ? .secondary : foregroundColor)
+        .frame(maxWidth: .infinity)
+        .frame(height: 112)
+        .background(
+            (isDisabled ? Color(uiColor: .quaternarySystemFill) : backgroundColor),
+            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+        )
+    }
+
     private var analysisOverlay: some View {
         ZStack {
             Color.black.opacity(0.78)
@@ -116,58 +185,6 @@ struct AnalyzeView: View {
         .transition(.opacity)
     }
 
-    @ViewBuilder
-    private func backgroundLayer(size: CGSize) -> some View {
-        if let previewImage {
-            AppBackdrop()
-
-            VStack {
-                previewImage
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity, maxHeight: imageDisplayHeight(for: size))
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .padding(.horizontal, 8)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.top, 68)
-            .padding(.bottom, 104)
-        } else {
-            ZStack {
-                AppBackdrop()
-
-                VStack(spacing: 12) {
-                    Image(systemName: "photo")
-                        .font(.system(size: 34, weight: .medium))
-                        .foregroundStyle(.secondary)
-                    Text("Choose an artwork to begin")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .ignoresSafeArea()
-        }
-    }
-
-    private func imageDisplayHeight(for size: CGSize) -> CGFloat {
-        let target = size.height * 0.75
-        return max(420, min(target, 760))
-    }
-
-    private func controlButton(symbol: String, isPrimary: Bool, isDisabled: Bool) -> some View {
-        let backgroundColor = isPrimary ? AppTheme.primaryActionBackground : Color.black.opacity(0.40)
-        let foregroundColor = AppTheme.primaryActionForeground
-
-        return Image(systemName: symbol)
-            .font(.system(size: 22, weight: .semibold))
-            .foregroundStyle(isDisabled ? .white.opacity(0.5) : foregroundColor)
-            .frame(width: 72, height: 72)
-            .background(
-                (isDisabled ? Color.black.opacity(0.25) : backgroundColor),
-                in: Circle()
-            )
-    }
-
     private func runAnalysis() async {
         guard let selectedImageData else { return }
 
@@ -180,6 +197,70 @@ struct AnalyzeView: View {
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+}
+
+private struct StretchyPreviewHeader: View {
+    let image: Image?
+    let baseHeight: CGFloat
+
+    var body: some View {
+        GeometryReader { proxy in
+            let minY = proxy.frame(in: .named("analyze-scroll")).minY
+            let extraHeight = max(minY, 0)
+
+            headerImage
+                .frame(width: proxy.size.width, height: baseHeight + extraHeight)
+                .clipped()
+                .offset(y: minY > 0 ? -minY : 0)
+                .overlay(alignment: .bottom) {
+                    LinearGradient(
+                        colors: [Color.clear, AppTheme.pageBackground.opacity(0.9)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 88)
+                }
+                .overlay(alignment: .top) {
+                    LinearGradient(
+                        colors: [Color.black.opacity(0.16), Color.clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 140)
+                }
+        }
+        .frame(height: baseHeight)
+    }
+
+    private var headerImage: some View {
+        Group {
+            if let image {
+                image
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                placeholder
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .background(Color(uiColor: .tertiarySystemFill))
+    }
+
+    private var placeholder: some View {
+        ZStack {
+            Color(uiColor: .tertiarySystemFill)
+
+            VStack(spacing: 10) {
+                Image(systemName: "photo")
+                    .font(.system(size: 34, weight: .medium))
+                    .foregroundStyle(.secondary)
+
+                Text("Choose an artwork to begin")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }
