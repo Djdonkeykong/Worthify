@@ -7,7 +7,8 @@ struct ResultsView: View {
 
     @State private var saveMessage: String?
     @State private var isSaving = false
-    @State private var showFullDescription = false
+
+    private let headerHeight: CGFloat = 360
 
     private var requiresSignIn: Bool {
         !environment.config.bypassAuth && signedInSession == nil
@@ -21,139 +22,137 @@ struct ResultsView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
+        ZStack {
             AppBackdrop()
 
-            ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 22) {
-                    ImageCard(url: result.sourceImageURL, height: 340)
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 0) {
+                    StretchyHeaderImage(url: result.sourceImageURL, baseHeight: headerHeight)
 
-                    summarySection
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Details")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
 
-                    Divider()
+                        GlassCard(padding: 0) {
+                            VStack(spacing: 0) {
+                                ForEach(Array(detailItems.enumerated()), id: \.offset) { index, item in
+                                    detailItemView(item)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, item.verticalPadding)
 
-                    detailsSection
-
-                    if let saveMessage {
-                        GlassCard {
-                            Label(
-                                saveMessage,
-                                systemImage: isPositiveSaveMessage(saveMessage) ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
-                            )
-                            .foregroundStyle(isPositiveSaveMessage(saveMessage) ? .green : .secondary)
+                                    if index != detailItems.count - 1 {
+                                        Divider()
+                                            .padding(.leading, 16)
+                                    }
+                                }
+                            }
                         }
-                    } else if requiresSignIn {
-                        GlassCard {
-                            Label("Sign in to save this result to your collection.", systemImage: "lock.slash")
+
+                        if let disclaimer = cleanedBlockText(result.disclaimer) {
+                            Text(disclaimer)
+                                .font(.footnote)
                                 .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 18)
+                    .padding(.bottom, 32)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 120)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            saveBar
+            .coordinateSpace(name: "results-scroll")
         }
-        .navigationTitle("Result")
+        .navigationTitle("Details")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showFullDescription) {
-            DescriptionSheet(text: fullSummaryText)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.hidden)
-        }
     }
 
-    private var saveBar: some View {
-        Button(saveButtonTitle) {
-            Task { await saveResult() }
-        }
-        .buttonStyle(WorthifyPrimaryButtonStyle())
-        .disabled(!canSave)
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 20)
-        .background(.ultraThinMaterial)
-    }
-
-    private var summarySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(displayTitleText)
-                .font(.system(size: 34, weight: .bold))
-                .lineLimit(2)
-                .minimumScaleFactor(0.75)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            ConfidenceBadge(label: result.confidenceText)
-
-            Text(displayValueText)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(AppTheme.accentSecondary)
-
-            HStack(spacing: 10) {
-                Circle()
-                    .fill(Color(uiColor: .tertiarySystemFill))
-                    .frame(width: 36, height: 36)
-                    .overlay {
-                        Text(artistInitial)
-                            .font(.subheadline.weight(.semibold))
-                    }
-
-                Text(displayArtistText)
-                    .font(.title3.weight(.semibold))
-                    .frame(maxWidth: .infinity, alignment: .leading)
+    @ViewBuilder
+    private func detailItemView(_ item: DetailItem) -> some View {
+        switch item {
+        case let .keyValue(title, value):
+            LabeledContent(title) {
+                Text(value)
+                    .multilineTextAlignment(.trailing)
+                    .foregroundStyle(.primary)
             }
 
+        case let .confidence(label):
+            LabeledContent("Confidence") {
+                ConfidenceBadge(label: label)
+            }
+
+        case let .note(title, value):
             VStack(alignment: .leading, spacing: 6) {
-                Text(fullSummaryText)
-                    .font(.body)
-                    .lineLimit(5)
-                    .foregroundStyle(AppTheme.ink)
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Text(value)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .fixedSize(horizontal: false, vertical: true)
-
-                if shouldShowMore {
-                    Button("more") {
-                        AppHaptics.mediumImpact()
-                        showFullDescription = true
-                    }
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(AppTheme.ink)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                }
             }
+
+        case .save:
+            saveActionContent
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var detailsSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Details")
-                .font(.title2.weight(.bold))
+    private var saveActionContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Collection")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
 
-            ForEach(Array(detailRows.enumerated()), id: \.offset) { index, row in
-                ResultDetailRow(icon: row.icon, title: row.title, value: row.value)
-
-                if index != detailRows.count - 1 {
-                    Divider()
-                        .padding(.leading, 32)
-                }
+            Button(saveButtonTitle) {
+                Task { await saveResult() }
             }
+            .buttonStyle(WorthifyPrimaryButtonStyle())
+            .disabled(!canSave)
 
-            if let disclaimer = cleanedInlineText(result.disclaimer) {
-                Text(disclaimer)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 4)
-            }
+            Text(saveStatusText)
+                .font(.footnote)
+                .foregroundStyle(saveStatusColor)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private var detailItems: [DetailItem] {
+        var items: [DetailItem] = [
+            .keyValue("Title", displayTitleText),
+            .keyValue("Artist", displayArtistText),
+            .confidence(result.confidenceText)
+        ]
+
+        if let value = localizedEstimatedValueText {
+            items.append(.keyValue("Estimated Value", value))
+        }
+        if let year = cleanedInlineText(result.yearEstimate) {
+            items.append(.keyValue("Year Estimate", year))
+        }
+        if let medium = cleanedInlineText(result.mediumGuess) {
+            items.append(.keyValue("Medium", medium))
+        }
+        if let style = cleanedInlineText(result.style) {
+            items.append(.keyValue("Style", style))
+        }
+        if let format = cleanedInlineText(result.isOriginalOrPrint) {
+            items.append(.keyValue("Format", format.capitalized))
+        }
+        if let reasoning = cleanedBlockText(result.valueReasoning) {
+            items.append(.note("Value Reasoning", reasoning))
+        }
+        if let comparables = cleanedBlockText(result.comparableExamplesSummary) {
+            items.append(.note("Comparable Examples", comparables))
+        }
+        if !isArtworkIdentified {
+            items.append(.note("Retake Tip", "Use a straight-on photo with less glare and tighter framing."))
+        }
+
+        items.append(.save)
+        return items
     }
 
     private var saveButtonTitle: String {
@@ -168,6 +167,29 @@ struct ResultsView: View {
 
     private var canSave: Bool {
         !isSaving && result.sourceImageURL != nil && !requiresSignIn && !isSaveCompleted
+    }
+
+    private var saveStatusText: String {
+        if let saveMessage {
+            return saveMessage
+        }
+        if requiresSignIn {
+            return "Sign in to save this result to your collection."
+        }
+        if result.sourceImageURL == nil {
+            return "This result cannot be saved because the source image is unavailable."
+        }
+        if isSaveCompleted {
+            return "This analysis is already in your collection."
+        }
+        return "Save this analysis to your collection for later."
+    }
+
+    private var saveStatusColor: Color {
+        if let saveMessage, isPositiveSaveMessage(saveMessage) {
+            return .green
+        }
+        return .secondary
     }
 
     private func saveResult() async {
@@ -205,115 +227,9 @@ struct ResultsView: View {
         return "No confident artist match yet"
     }
 
-    private var artistInitial: String {
-        let artist = cleanedInlineText(result.identifiedArtist) ?? ""
-        guard let first = artist.first else { return "?" }
-        return String(first).uppercased()
-    }
-
     private var localizedEstimatedValueText: String? {
         let formattedValue = EstimatedValueFormatter.displayText(from: result.estimatedValueRange)
         return cleanedInlineText(formattedValue ?? result.estimatedValueRange)
-    }
-
-    private var displayValueText: String {
-        localizedEstimatedValueText ?? "Value unavailable"
-    }
-
-    private var fullSummaryText: String {
-        if !isArtworkIdentified {
-            var parts = ["We couldn't confidently identify this artwork yet."]
-            if let candidate = cleanedInlineText(result.identifiedArtist) {
-                parts.append("Possible artist match: \(candidate).")
-            }
-            if let value = localizedEstimatedValueText {
-                parts.append("Estimated value from available signals: \(value).")
-            }
-            parts.append("Try a straight-on photo with less glare and tighter framing.")
-            return parts.joined(separator: " ")
-        }
-
-        var parts: [String] = []
-        var traits: [String] = []
-
-        if let year = cleanedInlineText(result.yearEstimate) {
-            traits.append("Year: \(year)")
-        }
-        if let medium = cleanedInlineText(result.mediumGuess) {
-            traits.append("Medium: \(medium)")
-        }
-        if let style = cleanedInlineText(result.style) {
-            traits.append("Style: \(style)")
-        }
-        if let format = cleanedInlineText(result.isOriginalOrPrint) {
-            traits.append("Format: \(format.capitalized)")
-        }
-        if !traits.isEmpty {
-            parts.append(traits.joined(separator: " | "))
-        }
-
-        if let value = localizedEstimatedValueText {
-            parts.append("Estimated value: \(value).")
-        }
-        if let reasoning = cleanedBlockText(result.valueReasoning) {
-            parts.append(reasoning)
-        } else if let comps = cleanedBlockText(result.comparableExamplesSummary) {
-            parts.append("Comparable examples: \(comps)")
-        }
-
-        if parts.isEmpty, let fallback = cleanedBlockText(result.summaryText) {
-            return fallback
-        }
-
-        if parts.isEmpty {
-            return "No additional details are available for this artwork."
-        }
-        return parts.joined(separator: "\n\n")
-    }
-
-    private var shouldShowMore: Bool {
-        fullSummaryText.count > 220 || fullSummaryText.contains("\n")
-    }
-
-    private var detailRows: [(icon: String, title: String, value: String)] {
-        var rows: [(icon: String, title: String, value: String)] = [
-            ("checkmark.seal", "Confidence", cleanedInlineText(result.confidenceText) ?? "Unknown")
-        ]
-
-        if let artist = cleanedInlineText(result.identifiedArtist) {
-            rows.append(("person", "Artist", artist))
-        }
-        if let value = localizedEstimatedValueText {
-            rows.append(("banknote", "Estimated value", value))
-        }
-        if let year = cleanedInlineText(result.yearEstimate) {
-            rows.append(("hourglass", "Year estimate", year))
-        }
-        if let medium = cleanedInlineText(result.mediumGuess) {
-            rows.append(("paintpalette", "Medium", medium))
-        }
-        if let style = cleanedInlineText(result.style) {
-            rows.append(("swatchpalette", "Style", style))
-        }
-        if let format = cleanedInlineText(result.isOriginalOrPrint) {
-            rows.append(("doc.on.doc", "Format", format.capitalized))
-        }
-        if let reasoning = cleanedBlockText(result.valueReasoning) {
-            rows.append(("text.quote", "Value reasoning", reasoning))
-        }
-        if let comps = cleanedBlockText(result.comparableExamplesSummary) {
-            rows.append(("list.bullet.rectangle.portrait", "Comparable examples", comps))
-        }
-
-        if !isArtworkIdentified {
-            rows.append(("camera.viewfinder", "Retake tip", "Use a straight-on photo with less glare and tighter framing."))
-        }
-
-        if rows.count == 1 {
-            rows.append(("info.circle", "Status", "Limited metadata available"))
-        }
-
-        return rows
     }
 
     private func cleanedInlineText(_ value: String?) -> String? {
@@ -391,70 +307,84 @@ struct ResultsView: View {
     }
 }
 
-private struct ResultDetailRow: View {
-    let icon: String
-    let title: String
-    let value: String
+private extension ResultsView {
+    enum DetailItem {
+        case keyValue(String, String)
+        case confidence(String)
+        case note(String, String)
+        case save
 
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(.primary)
-                .frame(width: 20)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                Text(value)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
+        var verticalPadding: CGFloat {
+            switch self {
+            case .note, .save:
+                return 14
+            case .keyValue, .confidence:
+                return 12
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
-private struct DescriptionSheet: View {
-    let text: String
-    @Environment(\.dismiss) private var dismiss
+private struct StretchyHeaderImage: View {
+    let url: URL?
+    let baseHeight: CGFloat
 
     var body: some View {
-        VStack(spacing: 0) {
-            Capsule()
-                .fill(Color(uiColor: .tertiaryLabel))
-                .frame(width: 46, height: 5)
-                .opacity(0.35)
-                .padding(.top, 10)
-                .padding(.bottom, 12)
+        GeometryReader { proxy in
+            let minY = proxy.frame(in: .named("results-scroll")).minY
+            let extraHeight = max(minY, 0)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.primary)
-                    }
-                    .buttonStyle(.plain)
-
-                    Text(text)
-                        .font(.title3)
-                        .foregroundStyle(.primary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+            headerImage
+                .frame(width: proxy.size.width, height: baseHeight + extraHeight)
+                .clipped()
+                .offset(y: minY > 0 ? -minY : 0)
+                .overlay(alignment: .bottom) {
+                    LinearGradient(
+                        colors: [Color.clear, AppTheme.pageBackground.opacity(0.9)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 88)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 26)
+        }
+        .frame(height: baseHeight)
+    }
+
+    private var headerImage: some View {
+        Group {
+            if let url {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case let .success(image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .failure:
+                        placeholder
+                    case .empty:
+                        ZStack {
+                            placeholder
+                            ProgressView()
+                        }
+                    @unknown default:
+                        placeholder
+                    }
+                }
+            } else {
+                placeholder
             }
+        }
+        .frame(maxWidth: .infinity)
+        .background(Color(uiColor: .tertiarySystemFill))
+    }
+
+    private var placeholder: some View {
+        ZStack {
+            Color(uiColor: .tertiarySystemFill)
+
+            Image(systemName: "photo")
+                .font(.title)
+                .foregroundStyle(.secondary)
         }
     }
 }
